@@ -23,20 +23,20 @@ def dl(manga_id):
 	chap_list = [s for s in chap_list.split(',')]
 	for s in chap_list:
 		if "-" in s:
-			r = [int(n) for n in s.split('-')]
+			r = [float(n) for n in s.split('-')]
 			s = list(range(r[0], r[1]+1))
 		else:
-			s = [int(s)]
+			s = [float(s)]
 		requested_chapters.extend(s)
 
 	# find out which are availble to dl (in english for now)
 	chaps_to_dl = []
 
 	for chapter_id in manga["chapter"]:
-		chapter_num = int(manga["chapter"][chapter_id]["chapter"])
+		chapter_num = float(manga["chapter"][chapter_id]["chapter"])
 		chapter_group = manga["chapter"][chapter_id]["group_name"]
 		if chapter_num in requested_chapters and manga["chapter"][chapter_id]["lang_code"] == "gb":
-			chaps_to_dl.append((chapter_num, chapter_id, chapter_group))
+			chaps_to_dl.append((str(chapter_num).replace(".0",""), chapter_id, chapter_group))
 	chaps_to_dl.sort()
 
 	if len(chaps_to_dl) == 0:
@@ -63,7 +63,7 @@ def dl(manga_id):
 		groupname = chapter_id[2].replace("/","-")
 		for url in images:
 			filename = os.path.basename(url)
-			dest_folder = os.path.join(os.getcwd(), "download", title, "[{}] ch{}".format(groupname, str(chapter_id[0]).zfill(2)))
+			dest_folder = os.path.join(os.getcwd(), "download", title, "[{}] ch{}".format(groupname, chapter_id[0].zfill(2)))
 			if not os.path.exists(dest_folder):
 				os.makedirs(dest_folder)
 			outfile = os.path.join(dest_folder, filename)
