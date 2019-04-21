@@ -60,7 +60,7 @@ def dl(manga_id):
 			images.append("{}{}/{}".format(server, hashcode, page))
 
 		# download images
-		groupname = chapter_id[2]
+		groupname = chapter_id[2].replace("/","-")
 		for url in images:
 			filename = os.path.basename(url)
 			dest_folder = os.path.join(os.getcwd(), "download", title, "[{}] ch{}".format(groupname, str(chapter_id[0]).zfill(2)))
