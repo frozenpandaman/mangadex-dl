@@ -2,7 +2,7 @@
 import cfscrape
 import time, os, re, json
 
-A_VERSION = "0.1"
+A_VERSION = "0.1.1"
 
 def dl(manga_id):
 	# grab manga info json from api
