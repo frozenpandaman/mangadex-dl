@@ -4,12 +4,13 @@ A Python script to download manga from [MangaDex.org](https://mangadex.org).
 
 ## Requirements
   * [Python 3](https://www.python.org/downloads/)
+  * [cloudscraper](https://github.com/VeNoMouS/cloudscraper)
   * [Node.js](https://nodejs.org/en/download/package-manager/)
 
 ## Installation & usage
-Clone the repo and run the script:
 ```
 $ git clone https://github.com/frozenpandaman/mangadex-dl
+$ pip install cloudscraper
 $ cd mangadex-dl/
 $ python mangadex-dl.py
 ```

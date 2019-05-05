@@ -1,14 +1,18 @@
 #!/usr/bin/env python
-import cfscrape
+import cloudscraper
 import time, os, re, json
 
-A_VERSION = "0.1.1"
+A_VERSION = "0.1.2"
 
 def dl(manga_id):
 	# grab manga info json from api
-	scraper = cfscrape.create_scraper()
-	r = scraper.get("https://mangadex.org/api/manga/{}/".format(manga_id))
-	manga = json.loads(r.text)
+	scraper = cloudscraper.create_scraper()
+	try:
+		r = scraper.get("https://mangadex.org/api/manga/{}/".format(manga_id))
+		manga = json.loads(r.text)
+	except (json.decoder.JSONDecodeError, ValueError) as err:
+		print("CloudFlare error: {}".format(err))
+		exit(1)
 
 	try:
 		title = manga["manga"]["title"]
