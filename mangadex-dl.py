@@ -27,7 +27,7 @@ def dl(manga_id):
 	chap_list = [s for s in chap_list.split(',')]
 	for s in chap_list:
 		if "-" in s:
-			r = [float(n) for n in s.split('-')]
+			r = [int(float(n)) for n in s.split('-')]
 			s = list(range(r[0], r[1]+1))
 		else:
 			s = [float(s)]
@@ -86,6 +86,8 @@ def dl(manga_id):
 
 if __name__ == "__main__":
 	print("mangadex-dl v{}".format(A_VERSION))
-	url = input("Enter manga URL: ").strip()
+	url = ""
+	while url == "":
+		url = input("Enter manga URL: ").strip()
 	manga_id = re.search("[0-9]+", url).group(0)
 	dl(manga_id)
