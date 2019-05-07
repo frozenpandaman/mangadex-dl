@@ -29,6 +29,9 @@ Downloading chapter 1...
 ... (and so on)
 ```
 
-Only English releases are currently supported, and the script will download all available releases of each chapter specified.
+### Current limitations
+ * Only English releases can be downloaded.
+ * Non-integer chapter numbers (e.g. 47.5) are not supported.
+ * The script will download all available releases of each chapter specified.
 
 If you are downloading for 10+ minutes straight, you may receive an IP block if trying to browse the site at the same time.
