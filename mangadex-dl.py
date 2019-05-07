@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 import cloudscraper
-import time, os, re, json
+import time, os, sys, re, json
 
-A_VERSION = "0.1.2"
+A_VERSION = "0.1.3"
 
-def dl(manga_id):
+def dl(manga_id, lang_code="gb"):
 	# grab manga info json from api
 	scraper = cloudscraper.create_scraper()
 	try:
@@ -39,7 +39,7 @@ def dl(manga_id):
 	for chapter_id in manga["chapter"]:
 		chapter_num = float(manga["chapter"][chapter_id]["chapter"])
 		chapter_group = manga["chapter"][chapter_id]["group_name"]
-		if chapter_num in requested_chapters and manga["chapter"][chapter_id]["lang_code"] == "gb":
+		if chapter_num in requested_chapters and manga["chapter"][chapter_id]["lang_code"] == lang_code:
 			chaps_to_dl.append((str(chapter_num).replace(".0",""), chapter_id, chapter_group))
 	chaps_to_dl.sort()
 
@@ -86,8 +86,14 @@ def dl(manga_id):
 
 if __name__ == "__main__":
 	print("mangadex-dl v{}".format(A_VERSION))
+
+	if len(sys.argv) > 1:
+		lang_code = sys.argv[1]
+	else:
+		lang_code = "gb"
+
 	url = ""
 	while url == "":
 		url = input("Enter manga URL: ").strip()
 	manga_id = re.search("[0-9]+", url).group(0)
-	dl(manga_id)
+	dl(manga_id, lang_code)
