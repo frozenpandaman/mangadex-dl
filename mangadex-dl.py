@@ -2,7 +2,7 @@
 import cloudscraper
 import time, os, sys, re, json
 
-A_VERSION = "0.1.3"
+A_VERSION = "0.1.4"
 
 def dl(manga_id, lang_code="gb"):
 	# grab manga info json from api
@@ -67,7 +67,7 @@ def dl(manga_id, lang_code="gb"):
 		groupname = chapter_id[2].replace("/","-")
 		for url in images:
 			filename = os.path.basename(url)
-			dest_folder = os.path.join(os.getcwd(), "download", title, "[{}] ch{}".format(groupname, chapter_id[0].zfill(2)))
+			dest_folder = os.path.join(os.getcwd(), "download", title, "c{} [{}]".format(chapter_id[0].zfill(3), groupname))
 			if not os.path.exists(dest_folder):
 				os.makedirs(dest_folder)
 			outfile = os.path.join(dest_folder, filename)
