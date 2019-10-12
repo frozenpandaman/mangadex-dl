@@ -19,7 +19,7 @@ def dl(manga_id, lang_code="gb"):
 	except:
 		print("Please enter a MangaDex manga (not chapter) URL.")
 		exit(1)
-	print("\nTitle: {}".format(title))
+	print("\nTitle: {}".format(title.encode('utf-8')))
 
 	# i/o for chapters to download
 	requested_chapters = []
