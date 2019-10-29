@@ -2,7 +2,7 @@
 import cloudscraper
 import time, os, sys, re, json
 
-A_VERSION = "0.1.4"
+A_VERSION = "0.1.5"
 
 def dl(manga_id, lang_code="gb"):
 	# grab manga info json from api
@@ -37,7 +37,10 @@ def dl(manga_id, lang_code="gb"):
 	chaps_to_dl = []
 
 	for chapter_id in manga["chapter"]:
-		chapter_num = float(manga["chapter"][chapter_id]["chapter"])
+		try:
+			chapter_num = float(manga["chapter"][chapter_id]["chapter"])
+		except:
+			pass # Oneshot
 		chapter_group = manga["chapter"][chapter_id]["group_name"]
 		if chapter_num in requested_chapters and manga["chapter"][chapter_id]["lang_code"] == lang_code:
 			chaps_to_dl.append((str(chapter_num).replace(".0",""), chapter_id, chapter_group))
