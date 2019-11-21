@@ -1,8 +1,27 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import cloudscraper
 import time, os, sys, re, json
 
-A_VERSION = "0.1.5"
+A_VERSION = "0.1.6"
+
+
+def chapter_key(c):
+	try:
+		n = int(float(c[0]))
+		return (n, c)
+	except:
+		return ("no_chapter", c)
+
+
+def pad_filename(s):
+	a = s.split('.')
+	try:
+		n = int(a[0])
+		a[0] = a[0].zfill(5)
+	except:
+		pass
+	return '.'.join(a)
+
 
 def dl(manga_id, lang_code="gb"):
 	# grab manga info json from api
@@ -44,7 +63,7 @@ def dl(manga_id, lang_code="gb"):
 		chapter_group = manga["chapter"][chapter_id]["group_name"]
 		if chapter_num in requested_chapters and manga["chapter"][chapter_id]["lang_code"] == lang_code:
 			chaps_to_dl.append((str(chapter_num).replace(".0",""), chapter_id, chapter_group))
-	chaps_to_dl.sort()
+	chaps_to_dl.sort(key=chapter_key)
 
 	if len(chaps_to_dl) == 0:
 		print("No chapters available to download!")
@@ -73,7 +92,8 @@ def dl(manga_id, lang_code="gb"):
 			dest_folder = os.path.join(os.getcwd(), "download", title, "c{} [{}]".format(chapter_id[0].zfill(3), groupname))
 			if not os.path.exists(dest_folder):
 				os.makedirs(dest_folder)
-			outfile = os.path.join(dest_folder, filename)
+			dest_filename = pad_filename(filename)
+			outfile = os.path.join(dest_folder, dest_filename)
 
 			r = scraper.get(url)
 			if r.status_code == 200:
