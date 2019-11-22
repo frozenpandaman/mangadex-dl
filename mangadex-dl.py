@@ -13,14 +13,14 @@ def chapter_key(c):
 		return ("no_chapter", c)
 
 
+digits_pat = re.compile('(\d+)');
+
 def pad_filename(s):
-	a = s.split('.')
-	try:
-		n = int(a[0])
-		a[0] = a[0].zfill(5)
-	except:
-		pass
-	return '.'.join(a)
+	m = digits_pat.search(s)
+	if m:
+		return s[:m.start()] + m.group(1).zfill(5) + s[m.end():]
+	else:
+		return s
 
 
 def dl(manga_id, lang_code="gb"):
