@@ -10,7 +10,7 @@ def chapter_key(c):
 		n = int(float(c[0]))
 		return (n, c)
 	except:
-		return ("no_chapter", c)
+		return (1000000000, c)
 
 
 digits_pat = re.compile('(\d+)');
