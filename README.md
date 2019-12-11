@@ -3,7 +3,7 @@
 A Python script to download manga from [MangaDex.org](https://mangadex.org).
 
 ## Requirements
-  * [Python 3](https://www.python.org/downloads/)
+  * [Python 3.4+](https://www.python.org/downloads/)
   * [cloudscraper](https://github.com/VeNoMouS/cloudscraper)
   * [Node.js](https://nodejs.org/en/download/package-manager/)
 
@@ -19,7 +19,7 @@ For a list of language codes (optional argument; defaults to English), see [the 
 
 ### Example usage
 ```
-$ ./mangadex-dl.py 
+$ ./mangadex-dl.py
 mangadex-dl v0.1
 Enter manga URL: https://mangadex.org/title/311/yotsuba-to
 
