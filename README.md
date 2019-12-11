@@ -41,7 +41,6 @@ Downloading chapter 1...
 ```
 
 ### Current limitations
- * Non-integer chapter numbers (e.g. 47.5) are not supported.
  * The script will download all available releases (in your language) of each chapter specified.
 
 If you are downloading for 10+ minutes straight, you may receive an IP block if trying to browse the site at the same time.
