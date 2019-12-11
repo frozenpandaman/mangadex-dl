@@ -2,9 +2,24 @@
 import cloudscraper
 import time, os, sys, re, json, html
 
-A_VERSION = "0.1.5"
+A_VERSION = "0.2"
 
-def dl(manga_id, lang_code="gb"):
+def pad_filename(str):
+	digits = re.compile('(\\d+)')
+	pos = digits.search(str)
+	if pos:
+		return str[1:pos.start()] + pos.group(1).zfill(3) + str[pos.end():]
+	else:
+		return str
+
+def zpad(num):
+	if "." in num:
+		parts = num.split('.')
+		return "{}.{}".format(parts[0].zfill(3), parts[1])
+	else:
+		return num.zfill(3)
+
+def dl(manga_id, lang_code):
 	# grab manga info json from api
 	scraper = cloudscraper.create_scraper()
 	try:
@@ -21,29 +36,55 @@ def dl(manga_id, lang_code="gb"):
 		exit(1)
 	print("\nTitle: {}".format(html.unescape(title)))
 
+	# check available chapters
+	chapters = []
+	for chap in manga["chapter"]:
+		if manga["chapter"][str(chap)]["lang_code"] == lang_code:
+			chapters.append(manga["chapter"][str(chap)]["chapter"])
+	chapters.sort(key=lambda x: float(x)) # sort numerically by chapter #
+
+	print("Available chapters:")
+	print(" " + ', '.join(map(str, chapters)))
+
 	# i/o for chapters to download
 	requested_chapters = []
-	chap_list = input("Enter chapter(s) to download: ").strip()
+	chap_list = input("\nEnter chapter(s) to download: ").strip()
 	chap_list = [s for s in chap_list.split(',')]
 	for s in chap_list:
+		s = s.strip()
 		if "-" in s:
-			r = [int(float(n)) for n in s.split('-')]
-			s = list(range(r[0], r[1]+1))
+			split = s.split('-')
+			lower_bound = split[0]
+			upper_bound = split[1]
+			try:
+				lower_bound_i = chapters.index(lower_bound)
+			except ValueError:
+				print("Chapter {} does not exist. Skipping {}.".format(lower_bound, s))
+				continue # go to next iteration of loop
+			try:
+				upper_bound_i = chapters.index(upper_bound)
+			except ValueError:
+				print("Chapter {} does not exist. Skipping {}.".format(upper_bound, s))
+				continue
+			s = chapters[lower_bound_i:upper_bound_i+1]
 		else:
-			s = [float(s)]
+			try:
+				s = [chapters[chapters.index(s)]]
+			except ValueError:
+				print("Chapter {} does not exist. Skipping.".format(s))
+				continue
 		requested_chapters.extend(s)
 
-	# find out which are availble to dl (in english for now)
+	# find out which are availble to dl
 	chaps_to_dl = []
-
 	for chapter_id in manga["chapter"]:
 		try:
-			chapter_num = float(manga["chapter"][chapter_id]["chapter"])
+			chapter_num = str(float(manga["chapter"][str(chapter_id)]["chapter"])).replace(".0","")
 		except:
 			pass # Oneshot
 		chapter_group = manga["chapter"][chapter_id]["group_name"]
 		if chapter_num in requested_chapters and manga["chapter"][chapter_id]["lang_code"] == lang_code:
-			chaps_to_dl.append((str(chapter_num).replace(".0",""), chapter_id, chapter_group))
+			chaps_to_dl.append((str(chapter_num), chapter_id, chapter_group))
 	chaps_to_dl.sort()
 
 	if len(chaps_to_dl) == 0:
@@ -70,10 +111,11 @@ def dl(manga_id, lang_code="gb"):
 		groupname = chapter_id[2].replace("/","-")
 		for url in images:
 			filename = os.path.basename(url)
-			dest_folder = os.path.join(os.getcwd(), "download", title, "c{} [{}]".format(chapter_id[0].zfill(3), groupname))
+			dest_folder = os.path.join(os.getcwd(), "download", title, "c{} [{}]".format(zpad(chapter_id[0]), groupname))
 			if not os.path.exists(dest_folder):
 				os.makedirs(dest_folder)
-			outfile = os.path.join(dest_folder, filename)
+			dest_filename = pad_filename(filename)
+			outfile = os.path.join(dest_folder, dest_filename)
 
 			r = scraper.get(url)
 			if r.status_code == 200:
