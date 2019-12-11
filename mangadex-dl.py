@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import cloudscraper
-import time, os, sys, re, json
+import time, os, sys, re, json, html
 
 A_VERSION = "0.1.5"
 
@@ -19,7 +19,7 @@ def dl(manga_id, lang_code="gb"):
 	except:
 		print("Please enter a MangaDex manga (not chapter) URL.")
 		exit(1)
-	print("\nTitle: {}".format(title))
+	print("\nTitle: {}".format(html.unescape(title)))
 
 	# i/o for chapters to download
 	requested_chapters = []
