@@ -2,7 +2,7 @@
 import cloudscraper
 import time, os, sys, re, json, html
 
-A_VERSION = "0.2"
+A_VERSION = "0.2.1"
 
 def pad_filename(str):
 	digits = re.compile('(\\d+)')
@@ -11,6 +11,13 @@ def pad_filename(str):
 		return str[1:pos.start()] + pos.group(1).zfill(3) + str[pos.end():]
 	else:
 		return str
+
+def float_conversion(x):
+	try:
+		x = float(x)
+	except ValueError: # empty string for oneshot
+		x = 0
+	return x
 
 def zpad(num):
 	if "." in num:
@@ -41,10 +48,11 @@ def dl(manga_id, lang_code):
 	for chap in manga["chapter"]:
 		if manga["chapter"][str(chap)]["lang_code"] == lang_code:
 			chapters.append(manga["chapter"][str(chap)]["chapter"])
-	chapters.sort(key=lambda x: float(x)) # sort numerically by chapter #
+	chapters.sort(key=float_conversion) # sort numerically by chapter #
 
+	chapters_revised = ["Oneshot" if x == "" else x for x in chapters]
 	print("Available chapters:")
-	print(" " + ', '.join(map(str, chapters)))
+	print(" " + ', '.join(map(str, chapters_revised)))
 
 	# i/o for chapters to download
 	requested_chapters = []
