@@ -112,7 +112,7 @@ def prompt_oneshots(oneshots):
 	return {oneshot[0]: oneshot[1] for oneshot in requested_oneshots}
 
 def get_page_urls(scraper, chapter_id):
-	r = scraper.get("https://mangadex.org/api/chapter/{}/".format(chapter_id[1]))
+	r = scraper.get("https://mangadex.org/api/chapter/{}/".format(chapter_id))
 	chapter = json.loads(r.text)
 
 	# get url list
