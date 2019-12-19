@@ -66,6 +66,51 @@ def prompt_chapters(chapters):
 
 	return {id: chapter for id, chapter in chapters.items() if chapter["chapter"] in requested_chapters}
 
+def prompt_oneshots(oneshots):
+	oneshots_by_index = [(id, chapter) for id, chapter in oneshots.items()]
+
+	print("Available oneshots:")
+
+	for index, oneshot in enumerate(oneshots_by_index):
+		print("  {}: {}".format(index + 1, oneshot[1]["title"]))
+
+	print()
+
+	selections = [
+		s for s in [s.strip() for s in input("Enter oneshot(s) to download: ").split(",")]
+		if s != ""
+	]
+
+	if len(selections) == 0:
+		return {}
+
+	max_selection = len(oneshots_by_index) + 1
+
+	requested_oneshots = []
+
+	# casting to int all the time is kind of ugly, but it's better than doing
+	# exception handling
+	for selection in selections:
+		if "-" in selection:
+			lower_bound, upper_bound = s.split("-")
+
+			if not lower_bound.isdigit() or int(lower_bound) < 1:
+				print("Oneshot {} does not exist. Skipping {}.".format(lower_bound, selection))
+				continue
+
+			if not upper_boud.isdigit() or int(upper_bound) > max_selection:
+				print("Oneshot {} does not exist. Skipping {}.".format(upper_bound, selection))
+				continue
+
+			requested_oneshots.extend(oneshots_by_index[int(lower_bound) - 1 : int(upper_bound) - 1])
+		else:
+			if selection.isdigit() and 0 < int(selection) < max_selection:
+				requested_oneshots.append(oneshots_by_index[int(selection) - 1])
+			else:
+				print("Oneshot {} does not exist. Skipping.".format(selection))
+
+	return {oneshot[0]: oneshot[1] for oneshot in requested_oneshots}
+
 def get_page_urls(scraper, chapter_id):
 	r = scraper.get("https://mangadex.org/api/chapter/{}/".format(chapter_id[1]))
 	chapter = json.loads(r.text)
@@ -112,7 +157,13 @@ def dl(manga_id, lang_code):
 			else:
 				chapters[id] = chapter
 
-	chapters_to_download = prompt_chapters(chapters)
+	chapters_to_download = {}
+
+	if (len(chapters) > 0):
+		chapters_to_download.update(prompt_chapters(chapters))
+
+	if (len(oneshots) > 0):
+		chapters_to_download.update(prompt_oneshots(oneshots))
 
 	if len(chapters_to_download) == 0:
 		print("No chapters available to download!")
@@ -123,12 +174,12 @@ def dl(manga_id, lang_code):
 
 	for id, chapter in chapters_to_download.items():
 		if is_oneshot(chapter):
-			print("Downloading oneshot {}".format(chapter["title"]))
+			print("Downloading oneshot '{}'".format(chapter["title"]))
 		else:
 			print("Downloading chapter {}".format(chapter["chapter"]))
 
 		page_urls = get_page_urls(scraper, id)
-		dest_folder = os.path.join(os.getcwd(), "download", chapter["title"], "{} [{}]".format(
+		dest_folder = os.path.join(os.getcwd(), "download", title, "{} [{}]".format(
 			chapter["title"] if is_oneshot(chapter) else "c{}".format(zpad(chapter["chapter"])),
 			chapter["group_name"].replace("/", "-")
 		))
