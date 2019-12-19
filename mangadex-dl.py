@@ -92,28 +92,20 @@ def dl(manga_id, lang_code):
 				chapters[id] = chapter
 
 	requested_chapters = prompt_chapters(chapters)
-	# temporary compatability
-	requested_chapters = [chapter["chapter"] for chapter in requested_chapters .values()]
 
 	# find out which are availble to dl
-	chaps_to_dl = []
-	for chapter_id in manga["chapter"]:
-		try:
-			chapter_num = str(float(manga["chapter"][str(chapter_id)]["chapter"])).replace(".0","")
-		except:
-			pass # Oneshot
-		chapter_group = manga["chapter"][chapter_id]["group_name"]
-		if chapter_num in requested_chapters and manga["chapter"][chapter_id]["lang_code"] == lang_code:
-			chaps_to_dl.append((str(chapter_num), chapter_id, chapter_group))
-	chaps_to_dl.sort()
+	chapters_to_download = [
+		(chapter["chapter"], id, chapter["group_name"])
+		for id, chapter in requested_chapters.items()
+	]
 
-	if len(chaps_to_dl) == 0:
+	if len(chapters_to_download) == 0:
 		print("No chapters available to download!")
 		exit(0)
 
 	# get chapter(s) json
 	print()
-	for chapter_id in chaps_to_dl:
+	for chapter_id in chapters_to_download:
 		print("Downloading chapter {}...".format(chapter_id[0]))
 		r = scraper.get("https://mangadex.org/api/chapter/{}/".format(chapter_id[1]))
 		chapter = json.loads(r.text)
