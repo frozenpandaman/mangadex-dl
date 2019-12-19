@@ -19,6 +19,50 @@ def zpad(num):
 	else:
 		return num.zfill(3)
 
+def prompt_chapters(chapters):
+	chapter_numbers = sorted(
+		[chapter["chapter"] for chapter in chapters.values()],
+		key = lambda x: float(x)
+	)
+
+	print("Available chapters:")
+	print(", ".join(chapter_numbers))
+
+	# i/o for chapters to download
+	requested_chapters = []
+	chapter_list = input("\nEnter chapter(s) to download: ").strip()
+	chapter_list = [s.strip() for s in chapter_list.split(",")]
+
+	for s in chapter_list:
+		if "-" in s:
+			split = s.split("-")
+			lower_bound = split[0]
+			upper_bound = split[1]
+
+			try:
+				lower_bound_i = chapter_numbers.index(lower_bound)
+			except ValueError:
+				print("Chapter {} does not exist. Skipping {}.".format(lower_bound, s))
+				continue
+
+			try:
+				upper_bound_i = chapter_numbers.index(upper_bound)
+			except ValueError:
+				print("Chapter {} does not exist. Skipping {}.".format(upper_bound, s))
+				continue
+
+			s = chapter_numbers[lower_bound_i:upper_bound_i+1]
+		else:
+			try:
+				s = [chapter_numbers[chapter_numbers.index(s)]]
+			except ValueError:
+				print("Chapter {} does not exist. Skipping.".format(s))
+				continue
+
+		requested_chapters.extend(s)
+
+	return {id: chapter for id, chapter in chapters.items() if chapter["chapter"] in requested_chapters}
+
 def dl(manga_id, lang_code):
 	# grab manga info json from api
 	scraper = cloudscraper.create_scraper()
@@ -37,43 +81,19 @@ def dl(manga_id, lang_code):
 	print("\nTitle: {}".format(html.unescape(title)))
 
 	# check available chapters
-	chapters = []
-	for chap in manga["chapter"]:
-		if manga["chapter"][str(chap)]["lang_code"] == lang_code:
-			chapters.append(manga["chapter"][str(chap)]["chapter"])
-	chapters.sort(key=lambda x: float(x)) # sort numerically by chapter #
+	chapters = {}
+	oneshots = {}
 
-	print("Available chapters:")
-	print(" " + ', '.join(map(str, chapters)))
+	for id, chapter in manga["chapter"].items():
+		if chapter["lang_code"] == lang_code:
+			if chapter["chapter"] == "":
+				oneshots[id] = chapter
+			else:
+				chapters[id] = chapter
 
-	# i/o for chapters to download
-	requested_chapters = []
-	chap_list = input("\nEnter chapter(s) to download: ").strip()
-	chap_list = [s for s in chap_list.split(',')]
-	for s in chap_list:
-		s = s.strip()
-		if "-" in s:
-			split = s.split('-')
-			lower_bound = split[0]
-			upper_bound = split[1]
-			try:
-				lower_bound_i = chapters.index(lower_bound)
-			except ValueError:
-				print("Chapter {} does not exist. Skipping {}.".format(lower_bound, s))
-				continue # go to next iteration of loop
-			try:
-				upper_bound_i = chapters.index(upper_bound)
-			except ValueError:
-				print("Chapter {} does not exist. Skipping {}.".format(upper_bound, s))
-				continue
-			s = chapters[lower_bound_i:upper_bound_i+1]
-		else:
-			try:
-				s = [chapters[chapters.index(s)]]
-			except ValueError:
-				print("Chapter {} does not exist. Skipping.".format(s))
-				continue
-		requested_chapters.extend(s)
+	requested_chapters = prompt_chapters(chapters)
+	# temporary compatability
+	requested_chapters = [chapter["chapter"] for chapter in requested_chapters .values()]
 
 	# find out which are availble to dl
 	chaps_to_dl = []
