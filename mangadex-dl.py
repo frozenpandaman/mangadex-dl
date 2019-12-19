@@ -29,7 +29,7 @@ def prompt_chapters(chapters):
 	)
 
 	print("Available chapters:")
-	print(", ".join(chapter_numbers))
+	print(" " + ", ".join(chapter_numbers))
 
 	# i/o for chapters to download
 	requested_chapters = []
@@ -72,7 +72,7 @@ def prompt_oneshots(oneshots):
 	print("Available oneshots:")
 
 	for index, oneshot in enumerate(oneshots_by_index):
-		print("  {}: {}".format(index + 1, oneshot[1]["title"]))
+		print(" {}: {}".format(index + 1, oneshot[1]["title"]))
 
 	print()
 
@@ -161,6 +161,8 @@ def dl(manga_id, lang_code):
 
 	if (len(chapters) > 0):
 		chapters_to_download.update(prompt_chapters(chapters))
+
+	print()
 
 	if (len(oneshots) > 0):
 		chapters_to_download.update(prompt_oneshots(oneshots))
