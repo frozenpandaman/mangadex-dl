@@ -19,6 +19,9 @@ def zpad(num):
 	else:
 		return num.zfill(3)
 
+def is_oneshot(chapter):
+	return chapter["chapter"] == ""
+
 def prompt_chapters(chapters):
 	chapter_numbers = sorted(
 		[chapter["chapter"] for chapter in chapters.values()],
@@ -63,6 +66,24 @@ def prompt_chapters(chapters):
 
 	return {id: chapter for id, chapter in chapters.items() if chapter["chapter"] in requested_chapters}
 
+def get_page_urls(scraper, chapter_id):
+	r = scraper.get("https://mangadex.org/api/chapter/{}/".format(chapter_id[1]))
+	chapter = json.loads(r.text)
+
+	# get url list
+	images = []
+	server = chapter["server"]
+
+	if "mangadex.org" not in server:
+		server = "https://mangadex.org{}".format(server)
+
+	hashcode = chapter["hash"]
+
+	for page in chapter["page_array"]:
+		images.append("{}{}/{}".format(server, hashcode, page))
+
+	return images
+
 def dl(manga_id, lang_code):
 	# grab manga info json from api
 	scraper = cloudscraper.create_scraper()
@@ -86,18 +107,12 @@ def dl(manga_id, lang_code):
 
 	for id, chapter in manga["chapter"].items():
 		if chapter["lang_code"] == lang_code:
-			if chapter["chapter"] == "":
+			if is_oneshot(chapter):
 				oneshots[id] = chapter
 			else:
 				chapters[id] = chapter
 
-	requested_chapters = prompt_chapters(chapters)
-
-	# find out which are availble to dl
-	chapters_to_download = [
-		(chapter["chapter"], id, chapter["group_name"])
-		for id, chapter in requested_chapters.items()
-	]
+	chapters_to_download = prompt_chapters(chapters)
 
 	if len(chapters_to_download) == 0:
 		print("No chapters available to download!")
@@ -105,31 +120,30 @@ def dl(manga_id, lang_code):
 
 	# get chapter(s) json
 	print()
-	for chapter_id in chapters_to_download:
-		print("Downloading chapter {}...".format(chapter_id[0]))
-		r = scraper.get("https://mangadex.org/api/chapter/{}/".format(chapter_id[1]))
-		chapter = json.loads(r.text)
 
-		# get url list
-		images = []
-		server = chapter["server"]
-		if "mangadex.org" not in server:
-			server = "https://mangadex.org{}".format(server)
-		hashcode = chapter["hash"]
-		for page in chapter["page_array"]:
-			images.append("{}{}/{}".format(server, hashcode, page))
+	for id, chapter in chapters_to_download.items():
+		if is_oneshot(chapter):
+			print("Downloading oneshot {}".format(chapter["title"]))
+		else:
+			print("Downloading chapter {}".format(chapter["chapter"]))
 
-		# download images
-		groupname = chapter_id[2].replace("/","-")
-		for url in images:
+		page_urls = get_page_urls(scraper, id)
+		dest_folder = os.path.join(os.getcwd(), "download", chapter["title"], "{} [{}]".format(
+			chapter["title"] if is_oneshot(chapter) else "c{}".format(zpad(chapter["chapter"])),
+			chapter["group_name"].replace("/", "-")
+		))
+
+		if not os.path.exists(dest_folder):
+			os.makedirs(dest_folder)
+
+		for url in page_urls:
 			filename = os.path.basename(url)
-			dest_folder = os.path.join(os.getcwd(), "download", title, "c{} [{}]".format(zpad(chapter_id[0]), groupname))
-			if not os.path.exists(dest_folder):
-				os.makedirs(dest_folder)
+
 			dest_filename = pad_filename(filename)
 			outfile = os.path.join(dest_folder, dest_filename)
 
 			r = scraper.get(url)
+
 			if r.status_code == 200:
 				with open(outfile, 'wb') as f:
 					f.write(r.content)
@@ -137,6 +151,7 @@ def dl(manga_id, lang_code):
 				print("Encountered Error {} when downloading.".format(e.code))
 
 			print(" Downloaded page {}.".format(re.sub("\\D", "", filename)))
+
 			time.sleep(1)
 
 	print("Done!")
