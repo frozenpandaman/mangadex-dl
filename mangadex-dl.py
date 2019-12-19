@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import cloudscraper
 import time, os, sys, re, json, html
+from collections import OrderedDict
 
 A_VERSION = "0.2"
 
@@ -64,7 +65,13 @@ def prompt_chapters(chapters):
 
 		requested_chapters.extend(s)
 
-	return {id: chapter for id, chapter in chapters.items() if chapter["chapter"] in requested_chapters}
+	return {
+		id: chapter for id, chapter in sorted(
+			chapters.items(),
+			key = lambda x: float(x[1]["chapter"])
+		)
+		if chapter["chapter"] in requested_chapters
+	}
 
 def prompt_oneshots(oneshots):
 	oneshots_by_index = [(id, chapter) for id, chapter in oneshots.items()]
@@ -157,7 +164,7 @@ def dl(manga_id, lang_code):
 			else:
 				chapters[id] = chapter
 
-	chapters_to_download = {}
+	chapters_to_download = OrderedDict()
 
 	if (len(chapters) > 0):
 		chapters_to_download.update(prompt_chapters(chapters))
@@ -172,8 +179,6 @@ def dl(manga_id, lang_code):
 		exit(0)
 
 	# get chapter(s) json
-	print()
-
 	for id, chapter in chapters_to_download.items():
 		if is_oneshot(chapter):
 			print("Downloading oneshot '{}'".format(chapter["title"]))
