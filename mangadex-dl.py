@@ -19,11 +19,11 @@ def zpad(num):
 	else:
 		return num.zfill(3)
 
-def dl(manga_id, lang_code):
+def dl(manga_id, lang_code, tld):
 	# grab manga info json from api
 	scraper = cloudscraper.create_scraper()
 	try:
-		r = scraper.get("https://mangadex.org/api/manga/{}/".format(manga_id))
+		r = scraper.get("https://mangadex.{}/api/manga/{}/".format(tld, manga_id))
 		manga = json.loads(r.text)
 	except (json.decoder.JSONDecodeError, ValueError) as err:
 		print("CloudFlare error: {}".format(err))
@@ -48,7 +48,7 @@ def dl(manga_id, lang_code):
 	for chap in manga["chapter"]:
 		if manga["chapter"][str(chap)]["lang_code"] == lang_code:
 			chapters.append(manga["chapter"][str(chap)]["chapter"])
-	chapters.sort(key=lambda x: float(x)) # sort numerically by chapter #
+	chapters.sort(key=lambda x: cvt_to_float(x)) # sort numerically by chapter #
 
 	print("Available chapters:")
 	print(" " + ', '.join(map(str, chapters)))
@@ -102,14 +102,14 @@ def dl(manga_id, lang_code):
 	print()
 	for chapter_id in chaps_to_dl:
 		print("Downloading chapter {}...".format(chapter_id[0]))
-		r = scraper.get("https://mangadex.org/api/chapter/{}/".format(chapter_id[1]))
+		r = scraper.get("https://mangadex.{}/api/chapter/{}/".format(tld, chapter_id[1]))
 		chapter = json.loads(r.text)
 
 		# get url list
 		images = []
 		server = chapter["server"]
 		if "mangadex.org" not in server:
-			server = "https://mangadex.org{}".format(server)
+			server = "https://mangadex.{}{}".format(tld, server)
 		hashcode = chapter["hash"]
 		for page in chapter["page_array"]:
 			images.append("{}{}/{}".format(server, hashcode, page))
@@ -136,6 +136,14 @@ def dl(manga_id, lang_code):
 
 	print("Done!")
 
+def cvt_to_float(input):
+	try:
+		out = float(input)
+	except:
+		return 0
+	
+	return out
+
 if __name__ == "__main__":
 	print("mangadex-dl v{}".format(A_VERSION))
 
@@ -148,4 +156,13 @@ if __name__ == "__main__":
 	while url == "":
 		url = input("Enter manga URL: ").strip()
 	manga_id = re.search("[0-9]+", url).group(0)
-	dl(manga_id, lang_code)
+	split_url = url.split("/")
+	for segment in split_url:
+		if "mangadex" in segment:
+			url = segment.split('.')
+
+	if url == None:
+		print("Error with URL")
+		
+	else:
+		dl(manga_id, lang_code, url[1])
