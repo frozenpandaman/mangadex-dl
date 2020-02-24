@@ -2,7 +2,7 @@
 import cloudscraper
 import time, os, sys, re, json, html
 
-A_VERSION = "0.2.1"
+A_VERSION = "0.2.2"
 
 def pad_filename(str):
 	digits = re.compile('(\\d+)')
@@ -26,11 +26,11 @@ def zpad(num):
 	else:
 		return num.zfill(3)
 
-def dl(manga_id, lang_code):
+def dl(manga_id, lang_code, tld="org"):
 	# grab manga info json from api
 	scraper = cloudscraper.create_scraper()
 	try:
-		r = scraper.get("https://mangadex.org/api/manga/{}/".format(manga_id))
+		r = scraper.get("https://mangadex.{}/api/manga/{}/".format(tld, manga_id))
 		manga = json.loads(r.text)
 	except (json.decoder.JSONDecodeError, ValueError) as err:
 		print("CloudFlare error: {}".format(err))
@@ -110,14 +110,14 @@ def dl(manga_id, lang_code):
 	print()
 	for chapter_id in chaps_to_dl:
 		print("Downloading chapter {}...".format(chapter_id[0]))
-		r = scraper.get("https://mangadex.org/api/chapter/{}/".format(chapter_id[1]))
+		r = scraper.get("https://mangadex.{}/api/chapter/{}/".format(tld, chapter_id[1]))
 		chapter = json.loads(r.text)
 
 		# get url list
 		images = []
 		server = chapter["server"]
-		if "mangadex.org" not in server:
-			server = "https://mangadex.org{}".format(server)
+		if "mangadex.{}".format(tld) not in server:
+			server = "https://mangadex.{}{}".format(tld, server)
 		hashcode = chapter["hash"]
 		for page in chapter["page_array"]:
 			images.append("{}{}/{}".format(server, hashcode, page))
@@ -155,5 +155,12 @@ if __name__ == "__main__":
 	url = ""
 	while url == "":
 		url = input("Enter manga URL: ").strip()
-	manga_id = re.search("[0-9]+", url).group(0)
-	dl(manga_id, lang_code)
+	try:
+		manga_id = re.search("[0-9]+", url).group(0)
+		split_url = url.split("/")
+		for segment in split_url:
+			if "mangadex" in segment:
+				url = segment.split('.')
+		dl(manga_id, lang_code, url[1])
+	except:
+		print("Error with URL.")
