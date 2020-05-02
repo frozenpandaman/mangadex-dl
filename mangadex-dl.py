@@ -57,9 +57,9 @@ def dl(manga_id, lang_code, tld="org"):
 			chapters.append(manga["chapter"][str(chap)]["chapter"])
 	chapters.sort(key=float_conversion) # sort numerically by chapter #
 
-	chapters_revised = ["Oneshot" if x == "" else x for x in chapters]
+	chapters = ["Oneshot" if x == "" else x for x in chapters]
 	print("Available chapters:")
-	print(" " + ', '.join(map(str, chapters_revised)))
+	print(" " + ', '.join(map(str, chapters)))
 
 	# i/o for chapters to download
 	requested_chapters = []
@@ -82,6 +82,12 @@ def dl(manga_id, lang_code, tld="org"):
 				print("Chapter {} does not exist. Skipping {}.".format(upper_bound, s))
 				continue
 			s = chapters[lower_bound_i:upper_bound_i+1]
+		elif s.lower() == "oneshot":
+			if "Oneshot" in chapters:
+				s = ["Oneshot"]
+			else:
+				print("Chapter 'Oneshot' does not exist. Skipping.")
+				continue
 		else:
 			try:
 				s = [chapters[chapters.index(s)]]
@@ -89,18 +95,24 @@ def dl(manga_id, lang_code, tld="org"):
 				print("Chapter {} does not exist. Skipping.".format(s))
 				continue
 		requested_chapters.extend(s)
-
+	requested_chapters.sort(key=float_conversion)
+	print()
+	print("Chapters to download:")
+	print(" " + ', '.join(requested_chapters))
 	# find out which are availble to dl
 	chaps_to_dl = []
 	for chapter_id in manga["chapter"]:
+		chapter_group = manga["chapter"][chapter_id]["group_name"]
 		try:
 			chapter_num = str(float(manga["chapter"][str(chapter_id)]["chapter"])).replace(".0","")
 		except:
-			pass # Oneshot
-		chapter_group = manga["chapter"][chapter_id]["group_name"]
-		if chapter_num in requested_chapters and manga["chapter"][chapter_id]["lang_code"] == lang_code:
-			chaps_to_dl.append((str(chapter_num), chapter_id, chapter_group))
-	chaps_to_dl.sort()
+			# oneshot
+			if "Oneshot" in requested_chapters and manga["chapter"][chapter_id]["lang_code"] == lang_code:
+				chaps_to_dl.append(("Oneshot", chapter_id, chapter_group))
+		else:
+			if chapter_num in requested_chapters and manga["chapter"][chapter_id]["lang_code"] == lang_code:
+				chaps_to_dl.append((str(chapter_num), chapter_id, chapter_group))
+	chaps_to_dl.sort(key=lambda x: float_conversion(x[0]))
 
 	if len(chaps_to_dl) == 0:
 		print("No chapters available to download!")
@@ -162,5 +174,6 @@ if __name__ == "__main__":
 			if "mangadex" in segment:
 				url = segment.split('.')
 		dl(manga_id, lang_code, url[1])
-	except:
+	except Exception as e:
 		print("Error with URL.")
+		print(e)
