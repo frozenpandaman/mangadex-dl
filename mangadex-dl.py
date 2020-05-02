@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import cloudscraper
-import time, os, sys, re, json, html
+import time, os, sys, re, json, html, zipfile
 
-A_VERSION = "0.2.2"
+A_VERSION = "0.2.3"
 
 def pad_filename(str):
 	digits = re.compile('(\\d+)')
@@ -26,7 +26,7 @@ def zpad(num):
 	else:
 		return num.zfill(3)
 
-def dl(manga_id, lang_code, tld="org"):
+def dl(manga_id, lang_code, zip_up, tld="org"):
 	# grab manga info json from api
 	scraper = cloudscraper.create_scraper()
 	try:
@@ -142,6 +142,16 @@ def dl(manga_id, lang_code, tld="org"):
 			print(" Downloaded page {}.".format(re.sub("\\D", "", filename)))
 			time.sleep(1)
 
+		if zip_up == True:
+			zip_name = os.path.join(os.getcwd(), "download", title, title + " c{} [{}]".format(zpad(chapter_id[0]), groupname))+".cbz"
+			chap_folder = os.path.join(os.getcwd(), "download", title, "c{} [{}]".format(zpad(chapter_id[0]), groupname))
+			with zipfile.ZipFile(zip_name, 'w') as myzip:
+				for root, dirs, files in os.walk(chap_folder):
+					for file in files:
+						myzip.write(os.path.join(root, file))
+
+			print(" Chapter successfully packaged into .cbz")
+
 	print("Done!")
 
 if __name__ == "__main__":
@@ -155,12 +165,24 @@ if __name__ == "__main__":
 	url = ""
 	while url == "":
 		url = input("Enter manga URL: ").strip()
+
+	cbz_answer = ""
+	while cbz_answer == "":
+		cbz_answer = input("Do you want to package chapters into .cbz? (y/n): ").strip()
+		if cbz_answer.lower() == "y":
+			cbz_answer = True
+		elif cbz_answer.lower() == "n":
+			cbz_answer = False
+		else:
+			"Invalid input"
+			cbz_answer = ""
+
 	try:
 		manga_id = re.search("[0-9]+", url).group(0)
 		split_url = url.split("/")
 		for segment in split_url:
 			if "mangadex" in segment:
 				url = segment.split('.')
-		dl(manga_id, lang_code, url[1])
+		dl(manga_id, lang_code, cbz_answer, url[1])
 	except:
 		print("Error with URL.")
