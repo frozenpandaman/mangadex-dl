@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import cloudscraper
-import time, os, sys, re, json, html, zipfile
+import time, os, sys, re, json, html, zipfile, argparse
 
 A_VERSION = "0.2.3"
 
@@ -26,7 +26,7 @@ def zpad(num):
 	else:
 		return num.zfill(3)
 
-def dl(manga_id, lang_code, zip_up, tld="org"):
+def dl(manga_id, lang_code, zip_up, tld="org", input_chap=""):
 	# grab manga info json from api
 	scraper = cloudscraper.create_scraper()
 	try:
@@ -63,7 +63,10 @@ def dl(manga_id, lang_code, zip_up, tld="org"):
 
 	# i/o for chapters to download
 	requested_chapters = []
-	chap_list = input("\nEnter chapter(s) to download: ").strip()
+	if input_chap == "":
+		chap_list = input("\nEnter chapter(s) to download: ").strip()
+	else:
+		chap_list = input_chap
 	chap_list = [s for s in chap_list.split(',')]
 	for s in chap_list:
 		s = s.strip()
@@ -132,12 +135,17 @@ def dl(manga_id, lang_code, zip_up, tld="org"):
 			dest_filename = pad_filename(filename)
 			outfile = os.path.join(dest_folder, dest_filename)
 
-			r = scraper.get(url)
-			if r.status_code == 200:
-				with open(outfile, 'wb') as f:
-					f.write(r.content)
-			else:
-				print("Encountered Error {} when downloading.".format(e.code))
+			for _ in range(0,10):
+				try:
+					r = scraper.get(url)
+					if r.status_code == 200:
+						with open(outfile, 'wb') as f:
+							f.write(r.content)
+				except:
+					print("Encountered an error when downloading. Retrying...")
+					time.sleep(2)
+					continue
+				break
 
 			print(" Downloaded page {}.".format(re.sub("\\D", "", filename)))
 			time.sleep(1)
@@ -158,24 +166,49 @@ if __name__ == "__main__":
 	print("mangadex-dl v{}".format(A_VERSION))
 
 	if len(sys.argv) > 1:
-		lang_code = sys.argv[1]
+		parser = argparse.ArgumentParser()
+
+		parser.add_argument("--url", "-u", default="", help="Enter Mangadex URL. Required.")
+		parser.add_argument("--lang", "-l", default="gb", help="Set desired language (https://github.com/frozenpandaman/mangadex-dl/wiki/language-codes). Defaults to gb if left out.")
+		parser.add_argument("--cbz", "-c", action="store_true", help="Include if you want to package chapter into .cbz")
+		parser.add_argument("--chapter", "-ch", default="", help="Enter desired chapters. Required.")
+
+		args = parser.parse_args()
+
+		if args.url.strip() == "":
+			print("You need to enter a URL")
+			exit()
+		if args.chapter.strip() == "":
+			print("You need to enter chapter(s)")
+			exit()
+		url = args.url
+		lang_code = args.lang
+		cbz_answer = args.cbz
+		input_chap = args.chapter
+
 	else:
-		lang_code = "gb"
+		url = ""
+		while url == "":
+			url = input("Enter manga URL: ").strip()
 
-	url = ""
-	while url == "":
-		url = input("Enter manga URL: ").strip()
+		cbz_answer = ""
+		while cbz_answer == "":
+			cbz_answer = input("Do you want to package chapters into .cbz?: (y/N) ").strip()
+			if cbz_answer.lower() == "y":
+				cbz_answer = True
+			elif cbz_answer.lower() == "n" or cbz_answer == "":
+				cbz_answer = False
+			else:
+				"Invalid input"
+				cbz_answer = ""
 
-	cbz_answer = ""
-	while cbz_answer == "":
-		cbz_answer = input("Do you want to package chapters into .cbz? (y/n): ").strip()
-		if cbz_answer.lower() == "y":
-			cbz_answer = True
-		elif cbz_answer.lower() == "n":
-			cbz_answer = False
-		else:
-			"Invalid input"
-			cbz_answer = ""
+		lang_code = ""
+		while lang_code == "":
+			lang_code = input("Enter desired language: (gb) ").strip()
+			if lang_code == "":
+				lang_code = "gb"
+
+		input_chap=""
 
 	try:
 		manga_id = re.search("[0-9]+", url).group(0)
@@ -183,6 +216,6 @@ if __name__ == "__main__":
 		for segment in split_url:
 			if "mangadex" in segment:
 				url = segment.split('.')
-		dl(manga_id, lang_code, cbz_answer, url[1])
-	except:
-		print("Error with URL.")
+		dl(manga_id, lang_code, cbz_answer, url[1], input_chap)
+	except Exception as e:
+		print("Error: " + e)
