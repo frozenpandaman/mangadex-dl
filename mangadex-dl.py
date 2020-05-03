@@ -129,12 +129,19 @@ def dl(manga_id, lang_code, tld="org"):
 			dest_filename = pad_filename("{}{}".format(pagenum, ext))
 			outfile = os.path.join(dest_folder, dest_filename)
 
-			r = scraper.get(url)
-			if r.status_code == 200:
-				with open(outfile, 'wb') as f:
-					f.write(r.content)
-			else:
-				print("Encountered Error {} when downloading.".format(r.status_code))
+			for n in range(0,10):
+				try:
+					r = scraper.get(url)
+					if r.status_code == 200:
+						with open(outfile, 'wb') as f:
+							f.write(r.content)
+				except:
+					if n < 10:
+						time.sleep(2)
+						continue
+					else:
+						print("Encountered Error {} when downloading.".format(r.status_code))
+				break
 
 			print(" Downloaded page {}.".format(pagenum))
 			time.sleep(1)
