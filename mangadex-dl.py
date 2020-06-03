@@ -2,7 +2,7 @@
 import cloudscraper
 import time, os, sys, re, json, html
 
-A_VERSION = "0.2.2"
+A_VERSION = "0.2.3"
 
 def pad_filename(str):
 	digits = re.compile('(\\d+)')
@@ -161,6 +161,6 @@ if __name__ == "__main__":
 		for segment in split_url:
 			if "mangadex" in segment:
 				url = segment.split('.')
-		dl(manga_id, lang_code, url[1])
+		dl(manga_id, lang_code, url[-1])
 	except:
 		print("Error with URL.")
