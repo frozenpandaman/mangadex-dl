@@ -2,7 +2,7 @@
 import cloudscraper
 import time, os, sys, re, json, html
 
-A_VERSION = "0.2.3"
+A_VERSION = "0.2.4"
 
 def pad_filename(str):
 	digits = re.compile('(\\d+)')
@@ -51,8 +51,12 @@ def dl(manga_id, lang_code, tld="org"):
 	chapters.sort(key=float_conversion) # sort numerically by chapter #
 
 	chapters_revised = ["Oneshot" if x == "" else x for x in chapters]
-	print("Available chapters:")
-	print(" " + ', '.join(map(str, chapters_revised)))
+	if len(chapters) == 0:
+		print("No chapters available to download!")
+		exit(0)
+	else:
+		print("Available chapters:")
+		print(" " + ', '.join(map(str, chapters_revised)))
 
 	# i/o for chapters to download
 	requested_chapters = []
@@ -94,10 +98,6 @@ def dl(manga_id, lang_code, tld="org"):
 		if chapter_num in requested_chapters and manga["chapter"][chapter_id]["lang_code"] == lang_code:
 			chaps_to_dl.append((str(chapter_num), chapter_id, chapter_group))
 	chaps_to_dl.sort()
-
-	if len(chaps_to_dl) == 0:
-		print("No chapters available to download!")
-		exit(0)
 
 	# get chapter(s) json
 	print()
@@ -154,6 +154,7 @@ if __name__ == "__main__":
 		for segment in split_url:
 			if "mangadex" in segment:
 				url = segment.split('.')
-		dl(manga_id, lang_code, url[-1])
 	except:
 		print("Error with URL.")
+
+	dl(manga_id, lang_code, url[-1])
