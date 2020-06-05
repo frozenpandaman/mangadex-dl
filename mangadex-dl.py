@@ -45,13 +45,6 @@ def dl(manga_id, lang_code, tld="org"):
 
 	# check available chapters
 	chapters = []
-
-	if "chapter" in manga:
-		print("Chapter found in language you requested")
-	else:
-		print("Chapter not found in the language you requested.")
-		exit(1)
-
 	for chap in manga["chapter"]:
 		if manga["chapter"][str(chap)]["lang_code"] == lang_code:
 			chapters.append(manga["chapter"][str(chap)]["chapter"])
