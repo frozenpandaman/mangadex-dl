@@ -1,6 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import cloudscraper
 import time, os, sys, re, json, html, zipfile, argparse
+
 
 A_VERSION = "0.3"
 
@@ -45,21 +46,18 @@ def dl(manga_id, lang_code, zip_up, tld="org", input_chap=""):
 
 	# check available chapters
 	chapters = []
-
-	if "chapter" in manga:
-		print("Chapter found in language you requested")
-	else:
-		print("Chapter not found in the language you requested.")
-		exit(1)
-
 	for chap in manga["chapter"]:
 		if manga["chapter"][str(chap)]["lang_code"] == lang_code:
 			chapters.append(manga["chapter"][str(chap)]["chapter"])
 	chapters.sort(key=float_conversion) # sort numerically by chapter #
 
 	chapters_revised = ["Oneshot" if x == "" else x for x in chapters]
-	print("Available chapters:")
-	print(" " + ', '.join(map(str, chapters_revised)))
+	if len(chapters) == 0:
+		print("No chapters available to download!")
+		exit(0)
+	else:
+		print("Available chapters:")
+		print(" " + ', '.join(map(str, chapters_revised)))
 
 	# i/o for chapters to download
 	requested_chapters = []
@@ -104,10 +102,6 @@ def dl(manga_id, lang_code, zip_up, tld="org", input_chap=""):
 		if chapter_num in requested_chapters and manga["chapter"][chapter_id]["lang_code"] == lang_code:
 			chaps_to_dl.append((str(chapter_num), chapter_id, chapter_group))
 	chaps_to_dl.sort()
-
-	if len(chaps_to_dl) == 0:
-		print("No chapters available to download!")
-		exit(0)
 
 	# get chapter(s) json
 	print()
@@ -218,4 +212,4 @@ if __name__ == "__main__":
 				url = segment.split('.')
 		dl(manga_id, lang_code, cbz_answer, url[1], input_chap)
 	except Exception as e:
-		print("Error: " + e)
+		print("Error: " + str(e))
