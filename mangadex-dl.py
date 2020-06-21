@@ -2,7 +2,7 @@
 import cloudscraper
 import time, os, sys, re, json, html
 
-A_VERSION = "0.2.4"
+A_VERSION = "0.2.5"
 
 def pad_filename(str):
 	digits = re.compile('(\\d+)')
@@ -109,7 +109,7 @@ def dl(manga_id, lang_code, tld="org"):
 		# get url list
 		images = []
 		server = chapter["server"]
-		if "mangadex.{}".format(tld) not in server:
+		if "mangadex." not in server:
 			server = "https://mangadex.{}{}".format(tld, server)
 		hashcode = chapter["hash"]
 		for page in chapter["page_array"]:
