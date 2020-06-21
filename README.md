@@ -20,7 +20,7 @@ For a list of language codes (optional argument; defaults to English), see [the 
 ### Example usage
 ```
 $ ./mangadex-dl.py
-mangadex-dl v0.2
+mangadex-dl v0.2.5
 Enter manga URL: https://mangadex.org/title/311/yotsuba-to
 
 Title: Yotsuba to!
@@ -30,7 +30,7 @@ Available chapters:
  41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 54.2, 55, 56, 57, 58,
  59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 69.2, 70, 71, 72, 73, 74, 75, 76,
  77, 78, 79, 79.2, 80, 81, 81.2, 81.3, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91,
- 92, 93, 94, 95, 96, 97, 98, 99, 100, 100, 100, 101, 102, 103
+ 92, 93, 94, 95, 96, 97, 98, 99, 100, 100, 100, 101, 102, 103, 104, 105
 
 Enter chapter(s) to download: 1, 4-7
 
