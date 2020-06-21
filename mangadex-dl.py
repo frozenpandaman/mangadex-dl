@@ -91,7 +91,7 @@ def dl(manga_id, lang_code, tld="org"):
 	chaps_to_dl = []
 	for chapter_id in manga["chapter"]:
 		try:
-			chapter_num = str(float(manga["chapter"][str(chapter_id)]["chapter"])).replace(".0","")
+			chapter_num = str(float(manga["chapter"][str(chapter_id)]["chapter"])).replace(".0", "")
 		except:
 			pass # Oneshot
 		chapter_group = manga["chapter"][chapter_id]["group_name"]
@@ -116,9 +116,10 @@ def dl(manga_id, lang_code, tld="org"):
 			images.append("{}{}/{}".format(server, hashcode, page))
 
 		# download images
-		groupname = chapter_id[2].replace("/","-")
+		groupname = chapter_id[2].replace("/", "-")
 		for url in images:
 			filename = os.path.basename(url)
+			title = title.replace("/", "-")
 			dest_folder = os.path.join(os.getcwd(), "download", title, "c{} [{}]".format(zpad(chapter_id[0]), groupname))
 			if not os.path.exists(dest_folder):
 				os.makedirs(dest_folder)
