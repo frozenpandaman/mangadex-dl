@@ -116,10 +116,10 @@ def dl(manga_id, lang_code, tld="org"):
 			images.append("{}{}/{}".format(server, hashcode, page))
 
 		# download images
-		groupname = chapter_id[2].replace("/", "-")
+		groupname = re.sub('[/<>:"/\\|?*]', '-', chapter_id[2])
 		for url in images:
 			filename = os.path.basename(url)
-			title = title.replace("/", "-")
+			title = re.sub('[/<>:"/\\|?*]', '-', title)
 			dest_folder = os.path.join(os.getcwd(), "download", title, "c{} [{}]".format(zpad(chapter_id[0]), groupname))
 			if not os.path.exists(dest_folder):
 				os.makedirs(dest_folder)
