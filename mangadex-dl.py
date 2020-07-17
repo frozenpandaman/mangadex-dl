@@ -2,7 +2,7 @@
 import cloudscraper
 import time, os, sys, re, json, html
 
-A_VERSION = "0.2.5"
+A_VERSION = "0.2.6"
 
 def pad_filename(str):
 	digits = re.compile('(\\d+)')
@@ -117,13 +117,15 @@ def dl(manga_id, lang_code, tld="org"):
 
 		# download images
 		groupname = re.sub('[/<>:"/\\|?*]', '-', chapter_id[2])
-		for url in images:
+		for pagenum, url in enumerate(images, 1):
 			filename = os.path.basename(url)
+			ext = os.path.splitext(filename)[1]
+
 			title = re.sub('[/<>:"/\\|?*]', '-', title)
 			dest_folder = os.path.join(os.getcwd(), "download", title, "c{} [{}]".format(zpad(chapter_id[0]), groupname))
 			if not os.path.exists(dest_folder):
 				os.makedirs(dest_folder)
-			dest_filename = pad_filename(filename)
+			dest_filename = pad_filename("{}{}".format(pagenum, ext))
 			outfile = os.path.join(dest_folder, dest_filename)
 
 			r = scraper.get(url)
@@ -133,7 +135,7 @@ def dl(manga_id, lang_code, tld="org"):
 			else:
 				print("Encountered Error {} when downloading.".format(e.code))
 
-			print(" Downloaded page {}.".format(re.sub("\\D", "", filename)))
+			print(" Downloaded page {}.".format(pagenum))
 			time.sleep(1)
 
 	print("Done!")
