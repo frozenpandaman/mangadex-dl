@@ -25,7 +25,7 @@ $ python mangadex-dl.py --help
 ### Example usage
 ```
 $ ./mangadex-dl.py
-mangadex-dl v0.3
+mangadex-dl v0.3.1
 Enter manga URL: https://mangadex.org/title/311/yotsuba-to
 Do you want to package chapters into .cbz?: (y/N) y
 Enter desired language: (gb)

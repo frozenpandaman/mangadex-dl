@@ -2,8 +2,7 @@
 import cloudscraper
 import time, os, sys, re, json, html, zipfile, argparse
 
-
-A_VERSION = "0.3"
+A_VERSION = "0.3.1"
 
 def pad_filename(str):
 	digits = re.compile('(\\d+)')
@@ -95,7 +94,7 @@ def dl(manga_id, lang_code, zip_up, tld="org", input_chap=""):
 	chaps_to_dl = []
 	for chapter_id in manga["chapter"]:
 		try:
-			chapter_num = str(float(manga["chapter"][str(chapter_id)]["chapter"])).replace(".0","")
+			chapter_num = str(float(manga["chapter"][str(chapter_id)]["chapter"])).replace(".0", "")
 		except:
 			pass # Oneshot
 		chapter_group = manga["chapter"][chapter_id]["group_name"]
@@ -113,20 +112,23 @@ def dl(manga_id, lang_code, zip_up, tld="org", input_chap=""):
 		# get url list
 		images = []
 		server = chapter["server"]
-		if "mangadex.{}".format(tld) not in server:
+		if "mangadex." not in server:
 			server = "https://mangadex.{}{}".format(tld, server)
 		hashcode = chapter["hash"]
 		for page in chapter["page_array"]:
 			images.append("{}{}/{}".format(server, hashcode, page))
 
 		# download images
-		groupname = chapter_id[2].replace("/","-")
-		for url in images:
+		groupname = re.sub('[/<>:"/\\|?*]', '-', chapter_id[2])
+		for pagenum, url in enumerate(images, 1):
 			filename = os.path.basename(url)
+			ext = os.path.splitext(filename)[1]
+
+			title = re.sub('[/<>:"/\\|?*]', '-', title)
 			dest_folder = os.path.join(os.getcwd(), "download", title, "c{} [{}]".format(zpad(chapter_id[0]), groupname))
 			if not os.path.exists(dest_folder):
 				os.makedirs(dest_folder)
-			dest_filename = pad_filename(filename)
+			dest_filename = pad_filename("{}{}".format(pagenum, ext))
 			outfile = os.path.join(dest_folder, dest_filename)
 
 			for _ in range(0,10):
@@ -141,7 +143,7 @@ def dl(manga_id, lang_code, zip_up, tld="org", input_chap=""):
 					continue
 				break
 
-			print(" Downloaded page {}.".format(re.sub("\\D", "", filename)))
+			print(" Downloaded page {}.".format(pagenum))
 			time.sleep(1)
 
 		if zip_up == True:
