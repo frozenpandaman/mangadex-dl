@@ -137,28 +137,52 @@ def dl(manga_id, lang_code, tld="org"):
 		# download images
 		groupname = re.sub('[/<>:"/\\|?*]', '-', chapter_id[2])
 		for pagenum, url in enumerate(images, 1):
-			filename = os.path.basename(url)
-			ext = os.path.splitext(filename)[1]
-
+			#while threading.active_count() > 31:
+			#	time.sleep(0.01)
 			title = re.sub('[/<>:"/\\|?*]', '-', title)
-			dest_folder = os.path.join(os.getcwd(), "download", title, "c{} [{}]".format(zpad(chapter_id[0]), groupname))
+			dest_folder = os.path.join(file_save_location, title)#, 
+			loc = ("c{} [{}]".format(zpad(chapter_id[0]), groupname))
 			if not os.path.exists(dest_folder):
 				os.makedirs(dest_folder)
+			tr = threading.Thread(target=img, args=(pagenum, url, groupname, title, chapter_id, dest_folder, loc))
+			tr.start()
+			#img(pagenum, url, groupname, title, chapter_id)
+			#time.sleep(0.01)
+
+	while threading.active_count() > 1:
+		tr.join()
+	print("Downloading done!")
+
+	for x in all_chapters:
+		try:
+			f = open(x)
+			f.close()
+		except:
+			print(x)
+
+def img(pagenum, url, groupname, title, chapter_id, dest_folder, loc):
+			global all_chapters
+			global scraper
+			filename = os.path.basename(url)
+			ext = os.path.splitext(filename)[1]
 			dest_filename = pad_filename("{}{}".format(pagenum, ext))
+			dest_filename = loc +" "+ dest_filename
 			outfile = os.path.join(dest_folder, dest_filename)
-			#global all_chapters
-			#global scraper
-			r = scraper.get(url)
-			if r.status_code == 200:
-				with open(outfile, 'wb') as f:
-					f.write(r.content)
-			else:
-				print("Encountered Error {} when downloading.".format(e.code))
+			all_chapters.append(outfile)
+			fail_count = 0
+			while True:
+				r = scraper.get(url)
+				if r.status_code == 200:
+					with open(outfile, 'wb') as f:
+						f.write(r.content)
+						break
+				else:
+					print("Encountered Error {} when downloading.".format(r.status_code))
+					fail_count += 1
+					if  fail_count > 6:
+						break
+			print(" Downloaded chapter {} page {}.			{}".format(chapter_id[0], pagenum, threading.active_count()-2))
 
-			print(" Downloaded page {}.".format(pagenum))
-			time.sleep(1)
-
-	print("Done!")
 
 if __name__ == "__main__":
 	print("mangadex-dl v{}".format(A_VERSION))
