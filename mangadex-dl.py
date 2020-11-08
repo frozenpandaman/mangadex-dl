@@ -4,7 +4,7 @@ import time, os, sys, re, json, html
 import threading
 
 #inital values
-A_VERSION = "0.2.7"
+A_VERSION = "0.2.8"
 
 # Global variables
 file_save_location = "C:\\Manga"
@@ -78,10 +78,17 @@ def dl(manga_id, lang_code):
 	else:
 		print("Available chapters:")
 		print(" " + ', '.join(map(str, chapters_revised)))
+		if len(dupl) != 0: 
+			print("Duplictes found")
+			print(" " + ', '.join(map(str, dupl)))
 
 	# i/o for chapters to download
 	requested_chapters = []
 	chap_list = input("\nEnter chapter(s) to download: ").strip()
+	
+	if chap_list == "all" or chap_list == "a":			#chapters
+		requested_chapters.extend(chapters)
+	else:
 		chap_list = [s for s in chap_list.split(',')]
 		for s in chap_list:
 			s = s.strip()
@@ -142,8 +149,6 @@ def dl(manga_id, lang_code):
 		# download images
 		groupname = re.sub('[/<>:"/\\|?*]', '-', chapter["groups"][0]["name"])
 		for pagenum, url in enumerate(images, 1):
-			#while threading.active_count() > 31:
-			#	time.sleep(0.01)
 			title = re.sub('[/<>:"/\\|?*]', '-', title)
 			dest_folder = os.path.join(file_save_location, title)#, 
 			loc = ("c{} [{}]".format(zpad(chapter_id[0]), groupname))
@@ -151,8 +156,6 @@ def dl(manga_id, lang_code):
 				os.makedirs(dest_folder)
 			tr = threading.Thread(target=img, args=(pagenum, url, groupname, title, chapter_id, dest_folder, loc))
 			tr.start()
-			#img(pagenum, url, groupname, title, chapter_id)
-			#time.sleep(0.01)
 
 	while threading.active_count() > 1:
 		tr.join()
@@ -188,27 +191,27 @@ def img(pagenum, url, groupname, title, chapter_id, dest_folder, loc):
 						break
 			print(" Downloaded chapter {} page {}.		Nr of active threads{}.".format(chapter_id[0], pagenum, threading.active_count()-2))
 
-
 if __name__ == "__main__":
-	print("mangadex-dl v{}".format(A_VERSION))
+	while True:
+		print("mangadex-dl v{}".format(A_VERSION))
 
-	if len(sys.argv) > 1:
-		lang_code = sys.argv[1]
-	else:
-		lang_code = "gb"
+		if len(sys.argv) > 1:
+			lang_code = sys.argv[1]
+		else:
+			lang_code = "gb"
 
-	url = ""
-	while url == "":
-		url = input("Enter manga URL: ").strip()
+		url = ""
+		while url == "":
+			url = input("Enter manga URL: ").strip()
 		if url == "exit" or url == "quit":
 			quit() 
-	try:
-		manga_id = re.search("[0-9]+", url).group(0)
-		split_url = url.split("/")
-		for segment in split_url:
-			if "mangadex" in segment:
-				url = segment.split('.')
-	except:
-		print("Error with URL.")
+		try:
+			manga_id = re.search("[0-9]+", url).group(0)
+			split_url = url.split("/")
+			for segment in split_url:
+				if "mangadex" in segment:
+					url = segment.split('.')
+		except:
+			print("Error with URL.")
 
-	dl(manga_id, lang_code)
+		dl(manga_id, lang_code)
