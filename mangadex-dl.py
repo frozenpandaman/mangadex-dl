@@ -2,7 +2,16 @@
 import cloudscraper
 import time, os, sys, re, json, html
 
-A_VERSION = "0.2.6"
+#inital values
+A_VERSION = "0.2.7"
+
+# Global variables
+file_save_location = "C:\\Manga"
+#default save location 
+# file_save_location = os.getcwd(), "download"
+failed_chapters = []
+all_chapters = []
+scraper = cloudscraper.create_scraper()
 
 def pad_filename(str):
 	digits = re.compile('(\\d+)')
