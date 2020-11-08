@@ -36,8 +36,12 @@ def zpad(num):
 		return num.zfill(3)
 
 def dl(manga_id, lang_code, tld="org"):
+	global file_save_location
+	global all_chapters
+	global failed_chapters
+	global scraper
+
 	# grab manga info json from api
-	scraper = cloudscraper.create_scraper()
 	try:
 		r = scraper.get("https://mangadex.{}/api/manga/{}/".format(tld, manga_id))
 		manga = json.loads(r.text)
@@ -142,7 +146,8 @@ def dl(manga_id, lang_code, tld="org"):
 				os.makedirs(dest_folder)
 			dest_filename = pad_filename("{}{}".format(pagenum, ext))
 			outfile = os.path.join(dest_folder, dest_filename)
-
+			#global all_chapters
+			#global scraper
 			r = scraper.get(url)
 			if r.status_code == 200:
 				with open(outfile, 'wb') as f:
