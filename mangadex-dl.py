@@ -51,6 +51,12 @@ def dl(manga_id, lang_code, tld="org"):
 	chapters.sort(key=float_conversion) # sort numerically by chapter #
 
 	chapters_revised = ["Oneshot" if x == "" else x for x in chapters]
+
+	dupl = set()
+	for i in chapters_revised:
+		if chapters_revised.count(i) > 1:
+			dupl.add(i)
+
 	if len(chapters) == 0:
 		print("No chapters available to download!")
 		exit(0)
