@@ -2,6 +2,7 @@
 import cloudscraper
 import time, os, sys, re, json, html
 import threading
+
 #inital values
 A_VERSION = "0.2.7"
 
@@ -41,16 +42,18 @@ def dl(manga_id, lang_code):
 	global failed_chapters
 	global scraper
 
-	# grab manga info json from api
+	# grab manga info json from api v2	
 	try:
-		r = scraper.get("https://mangadex.org/api/manga/{}/".format(manga_id))
+		r = scraper.get("https://mangadex.org/api/v2/manga/{}/chapters".format(manga_id))
 		manga = json.loads(r.text)
+		manga = manga["data"]
 	except (json.decoder.JSONDecodeError, ValueError) as err:
 		print("CloudFlare error: {}".format(err))
 		exit(1)
 
+	# Check if there is a title
 	try:
-		title = manga["manga"]["title"]
+		title = manga["chapters"][0]["mangaTitle"]
 	except:
 		print("Please enter a MangaDex manga (not chapter) URL.")
 		exit(1)
@@ -58,9 +61,9 @@ def dl(manga_id, lang_code):
 
 	# check available chapters
 	chapters = []
-	for chap in manga["chapter"]:
-		if manga["chapter"][str(chap)]["lang_code"] == lang_code:
-			chapters.append(manga["chapter"][str(chap)]["chapter"])
+	for chap in range(len(manga["chapters"])):
+		if manga["chapters"][chap]["language"] == lang_code:
+			chapters.append(manga["chapters"][chap]["chapter"])
 	chapters.sort(key=float_conversion) # sort numerically by chapter #
 
 	chapters_revised = ["Oneshot" if x == "" else x for x in chapters]
@@ -72,7 +75,6 @@ def dl(manga_id, lang_code):
 
 	if len(chapters) == 0:
 		print("No chapters available to download!")
-		exit(0)
 	else:
 		print("Available chapters:")
 		print(" " + ', '.join(map(str, chapters_revised)))
@@ -80,62 +82,65 @@ def dl(manga_id, lang_code):
 	# i/o for chapters to download
 	requested_chapters = []
 	chap_list = input("\nEnter chapter(s) to download: ").strip()
-	chap_list = [s for s in chap_list.split(',')]
-	for s in chap_list:
-		s = s.strip()
-		if "-" in s:
-			split = s.split('-')
-			lower_bound = split[0]
-			upper_bound = split[1]
-			try:
-				lower_bound_i = chapters.index(lower_bound)
-			except ValueError:
-				print("Chapter {} does not exist. Skipping {}.".format(lower_bound, s))
-				continue # go to next iteration of loop
-			try:
-				upper_bound_i = chapters.index(upper_bound)
-			except ValueError:
-				print("Chapter {} does not exist. Skipping {}.".format(upper_bound, s))
-				continue
-			s = chapters[lower_bound_i:upper_bound_i+1]
-		else:
-			try:
-				s = [chapters[chapters.index(s)]]
-			except ValueError:
-				print("Chapter {} does not exist. Skipping.".format(s))
-				continue
-		requested_chapters.extend(s)
+		chap_list = [s for s in chap_list.split(',')]
+		for s in chap_list:
+			s = s.strip()
+			if "-" in s:
+				split = s.split('-')
+				lower_bound = split[0]
+				upper_bound = split[1]
+				try:
+					lower_bound_i = chapters.index(lower_bound)
+				except ValueError:
+					print("Chapter {} does not exist. Skipping {}.".format(lower_bound, s))
+					continue # go to next iteration of loop
+				try:
+					upper_bound_i = chapters.index(upper_bound)
+				except ValueError:
+					print("Chapter {} does not exist. Skipping {}.".format(upper_bound, s))
+					continue
+				s = chapters[lower_bound_i:upper_bound_i+1]
+			else:
+				try:
+					s = [chapters[chapters.index(s)]]
+				except ValueError:
+					print("Chapter {} does not exist. Skipping.".format(s))
+					continue
+			requested_chapters.extend(s)
 
 	# find out which are availble to dl
 	chaps_to_dl = []
-	for chapter_id in manga["chapter"]:
+	for chapter_id in range(len(manga["chapters"])):
+		#print(manga["chapters"][chapter_id]["chapter"])
 		try:
-			chapter_num = str(float(manga["chapter"][str(chapter_id)]["chapter"])).replace(".0", "")
+			chapter_num = str(float(manga["chapters"][str(chapter_id)]["chapter"])).replace(".0", "")
 		except:
-			pass # Oneshot
-		chapter_group = manga["chapter"][chapter_id]["group_name"]
-		if chapter_num in requested_chapters and manga["chapter"][chapter_id]["lang_code"] == lang_code:
-			chaps_to_dl.append((str(chapter_num), chapter_id, chapter_group))
-	chaps_to_dl.sort(key = lambda x: float(x[0]))
+			chapter_num = str(manga["chapters"][chapter_id]["chapter"])
+			#pass # Oneshot
+		chapter_group = manga["chapters"][chapter_id]["groups"]
+		#print(chapter_group)
+		if chapter_num in requested_chapters and manga["chapters"][chapter_id]["language"] == lang_code:
+			chaps_to_dl.append((str(chapter_num), manga["chapters"][chapter_id]["id"], chapter_group))
+	chaps_to_dl.sort(key = lambda x: x[0])
 
 	# get chapter(s) json
 	print()
 	for chapter_id in chaps_to_dl:
 		print("Downloading chapter {}...".format(chapter_id[0]))
-		r = scraper.get("https://mangadex.org/api/chapter/{}/".format(chapter_id[1]))
+		r = scraper.get("https://mangadex.org/api/v2/chapter/{}/".format(chapter_id[1]))
 		chapter = json.loads(r.text)
-
+		chapter = chapter["data"]
 		# get url list
 		images = []
 		server = chapter["server"]
 		if "mangadex." not in server:
 			server = "https://mangadex.org{}".format(server)
 		hashcode = chapter["hash"]
-		for page in chapter["page_array"]:
+		for page in chapter["pages"]:
 			images.append("{}{}/{}".format(server, hashcode, page))
 
 		# download images
-		groupname = re.sub('[/<>:"/\\|?*]', '-', chapter_id[2])
+		groupname = re.sub('[/<>:"/\\|?*]', '-', chapter["groups"][0]["name"])
 		for pagenum, url in enumerate(images, 1):
 			#while threading.active_count() > 31:
 			#	time.sleep(0.01)
