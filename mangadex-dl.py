@@ -35,7 +35,7 @@ def zpad(num):
 	else:
 		return num.zfill(3)
 
-def dl(manga_id, lang_code, tld="org"):
+def dl(manga_id, lang_code):
 	global file_save_location
 	global all_chapters
 	global failed_chapters
@@ -43,7 +43,7 @@ def dl(manga_id, lang_code, tld="org"):
 
 	# grab manga info json from api
 	try:
-		r = scraper.get("https://mangadex.{}/api/manga/{}/".format(tld, manga_id))
+		r = scraper.get("https://mangadex.org/api/manga/{}/".format(manga_id))
 		manga = json.loads(r.text)
 	except (json.decoder.JSONDecodeError, ValueError) as err:
 		print("CloudFlare error: {}".format(err))
@@ -122,14 +122,14 @@ def dl(manga_id, lang_code, tld="org"):
 	print()
 	for chapter_id in chaps_to_dl:
 		print("Downloading chapter {}...".format(chapter_id[0]))
-		r = scraper.get("https://mangadex.{}/api/chapter/{}/".format(tld, chapter_id[1]))
+		r = scraper.get("https://mangadex.org/api/chapter/{}/".format(chapter_id[1]))
 		chapter = json.loads(r.text)
 
 		# get url list
 		images = []
 		server = chapter["server"]
 		if "mangadex." not in server:
-			server = "https://mangadex.{}{}".format(tld, server)
+			server = "https://mangadex.org{}".format(server)
 		hashcode = chapter["hash"]
 		for page in chapter["page_array"]:
 			images.append("{}{}/{}".format(server, hashcode, page))
@@ -181,7 +181,7 @@ def img(pagenum, url, groupname, title, chapter_id, dest_folder, loc):
 					fail_count += 1
 					if  fail_count > 6:
 						break
-			print(" Downloaded chapter {} page {}.			{}".format(chapter_id[0], pagenum, threading.active_count()-2))
+			print(" Downloaded chapter {} page {}.		Nr of active threads{}.".format(chapter_id[0], pagenum, threading.active_count()-2))
 
 
 if __name__ == "__main__":
@@ -195,6 +195,8 @@ if __name__ == "__main__":
 	url = ""
 	while url == "":
 		url = input("Enter manga URL: ").strip()
+		if url == "exit" or url == "quit":
+			quit() 
 	try:
 		manga_id = re.search("[0-9]+", url).group(0)
 		split_url = url.split("/")
@@ -204,4 +206,4 @@ if __name__ == "__main__":
 	except:
 		print("Error with URL.")
 
-	dl(manga_id, lang_code, url[-1])
+	dl(manga_id, lang_code)
