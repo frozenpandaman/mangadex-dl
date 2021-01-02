@@ -89,6 +89,7 @@ def dl(manga_id, lang_code, tld="org"):
 
 	# find out which are availble to dl
 	chaps_to_dl = []
+	chapter_num = None
 	for chapter_id in manga["chapter"]:
 		try:
 			chapter_num = str(float(manga["chapter"][str(chapter_id)]["chapter"])).replace(".0", "")
