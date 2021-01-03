@@ -134,7 +134,7 @@ def dl(manga_id, lang_code, tld="org"):
 				with open(outfile, 'wb') as f:
 					f.write(r.content)
 			else:
-				print("Encountered Error {} when downloading.".format(e.code))
+				print("Encountered Error {} when downloading.".format(r.status_code))
 
 			print(" Downloaded page {}.".format(pagenum))
 			time.sleep(1)
