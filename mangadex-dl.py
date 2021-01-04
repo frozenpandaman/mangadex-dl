@@ -103,9 +103,20 @@ def dl(manga_id, lang_code, tld="org"):
 	# get chapter(s) json
 	print()
 	for chapter_id in chaps_to_dl:
+		for n in range(0,10):
+			try:
+				r = scraper.get("https://mangadex.{}/api/chapter/{}/".format(tld, chapter_id[1]))
+				if r.status_code == 200:
+					chapter = json.loads(r.text)
+			except:
+				if n < 10:
+					time.sleep(2)
+					continue
+				else:
+					print("Encountered error {} when downloading.".format(r.status_code))
+			break
+
 		print("Downloading chapter {}...".format(chapter_id[0]))
-		r = scraper.get("https://mangadex.{}/api/chapter/{}/".format(tld, chapter_id[1]))
-		chapter = json.loads(r.text)
 
 		# get url list
 		images = []
