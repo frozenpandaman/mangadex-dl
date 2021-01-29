@@ -2,7 +2,7 @@
 import cloudscraper
 import time, os, sys, re, json, html
 
-A_VERSION = "0.2.6"
+A_VERSION = "0.2.7"
 
 def pad_filename(str):
 	digits = re.compile('(\\d+)')
@@ -92,7 +92,8 @@ def dl(manga_id, lang_code, tld="org"):
 	chapter_num = None
 	for chapter_id in manga["chapter"]:
 		try:
-			chapter_num = str(float(manga["chapter"][str(chapter_id)]["chapter"])).replace(".0", "")
+			chapter_num = str(float(manga["chapter"][str(chapter_id)]["chapter"]))
+			chapter_num = re.sub('.0$', '', chapter_num)
 		except:
 			pass # Oneshot
 		chapter_group = manga["chapter"][chapter_id]["group_name"]
