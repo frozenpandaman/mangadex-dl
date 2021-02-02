@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import cloudscraper
-import time, os, sys, re, json, html
+import time, os, sys, re, json, html, random
 
 A_VERSION = "0.2.7"
 
@@ -145,10 +145,17 @@ def dl(manga_id, lang_code, tld="org"):
 			if r.status_code == 200:
 				with open(outfile, 'wb') as f:
 					f.write(r.content)
+					print(" Downloaded page {}.".format(pagenum))
 			else:
-				print("Encountered Error {} when downloading.".format(r.status_code))
-
-			print(" Downloaded page {}.".format(pagenum))
+				# silently try again
+				time.sleep(3)
+				r = scraper.get(url)
+				if r.status_code == 200:
+					with open(outfile, 'wb') as f:
+						f.write(r.content)
+						print(" Downloaded page {}.".format(pagenum))
+				else:
+					print(" Skipping download of page {} - error {}.".format(pagenum, r.status_code))
 			time.sleep(1)
 
 	print("Done!")
