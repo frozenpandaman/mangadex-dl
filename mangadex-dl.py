@@ -2,7 +2,7 @@
 import cloudscraper
 import time, os, sys, re, json, html, random
 
-A_VERSION = "0.2.7"
+A_VERSION = "0.3"
 
 def pad_filename(str):
 	digits = re.compile('(\\d+)')
@@ -55,13 +55,13 @@ def dl(manga_id, lang_code, tld="org"):
 			chapters.append(i["chapter"])
 	chapters.sort(key=float_conversion) # sort numerically by chapter #
 
-	chapters_revised = ["Oneshot" if x == "" else x for x in chapters]
+	chapters = ["Oneshot" if x == "" else x for x in chapters]
 	if len(chapters) == 0:
 		print("No chapters available to download!")
 		exit(0)
 	else:
 		print("Available chapters:")
-		print(" " + ', '.join(map(str, chapters_revised)))
+		print(" " + ', '.join(map(str, chapters)))
 
 	# i/o for chapters to download
 	requested_chapters = []
@@ -84,6 +84,11 @@ def dl(manga_id, lang_code, tld="org"):
 				print("Chapter {} does not exist. Skipping {}.".format(upper_bound, s))
 				continue
 			s = chapters[lower_bound_i:upper_bound_i+1]
+		elif s.lower() == "oneshot":
+			if "Oneshot" in chapters:
+				s = ["Oneshot"]
+			else:
+				print("Chapter {} does not exist. Skipping.".format(s))
 		else:
 			try:
 				s = [chapters[chapters.index(s)]]
@@ -99,11 +104,12 @@ def dl(manga_id, lang_code, tld="org"):
 		try:
 			chapter_num = str(float(i["chapter"]))
 			chapter_num = re.sub('.0$', '', chapter_num) # only replace at end (not chapter #s with decimals)
-		except:
-			pass # Oneshot
+		except: # oneshot
+			if "Oneshot" in requested_chapters and i["language"] == lang_code:
+				chaps_to_dl.append(("Oneshot", i["id"]))
 		if chapter_num in requested_chapters and i["language"] == lang_code:
 			chaps_to_dl.append((str(chapter_num), i["id"]))
-	chaps_to_dl.sort(key = lambda x: float(x[0]))
+	chaps_to_dl.sort(key = lambda x: float_conversion(x[0]))
 
 	# get chapter(s) json
 	print()
@@ -135,7 +141,10 @@ def dl(manga_id, lang_code, tld="org"):
 			ext = os.path.splitext(filename)[1]
 
 			title = re.sub('[/<>:"/\\|?*]', '-', title)
-			dest_folder = os.path.join(os.getcwd(), "download", title, "c{} [{}]".format(zpad(chapter_info[0]), groupname))
+			chapnum = zpad(chapter_info[0])
+			if chapnum != "Oneshot":
+				chapnum = 'c' + chapnum
+			dest_folder = os.path.join(os.getcwd(), "download", title, "{} [{}]".format(chapnum, groupname))
 			if not os.path.exists(dest_folder):
 				os.makedirs(dest_folder)
 			dest_filename = pad_filename("{}{}".format(pagenum, ext))
