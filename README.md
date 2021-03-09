@@ -1,6 +1,6 @@
 # mangadex-dl
 
-A Python script to download manga from [MangaDex.org](https://mangadex.org).
+A Python script to download manga from [MangaDex.org](https://mangadex.org/).
 
 ## Requirements
   * [Python 3.4+](https://www.python.org/downloads/)
@@ -20,7 +20,7 @@ For a list of language codes (optional argument; defaults to English), see [the 
 ### Example usage
 ```
 $ ./mangadex-dl.py
-mangadex-dl v0.2.5
+mangadex-dl v0.3
 Enter manga URL: https://mangadex.org/title/311/yotsuba-to
 
 Title: Yotsuba to!
@@ -44,3 +44,7 @@ Downloading chapter 1...
  * The script will download all available releases (in your language) of each chapter specified.
 
 If you are downloading for 10+ minutes straight, you may receive an IP block if trying to browse the site at the same time.
+
+## License
+
+[GPLv3](https://www.gnu.org/licenses/gpl-3.0.html)
