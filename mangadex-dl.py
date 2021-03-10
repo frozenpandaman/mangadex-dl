@@ -18,7 +18,7 @@
 import cloudscraper
 import time, os, sys, re, json, html, random
 
-A_VERSION = "0.3"
+A_VERSION = "0.3.1"
 
 def pad_filename(str):
 	digits = re.compile('(\\d+)')
@@ -156,7 +156,7 @@ def dl(manga_id, lang_code, tld="org"):
 			filename = os.path.basename(url)
 			ext = os.path.splitext(filename)[1]
 
-			title = re.sub('[/<>:"/\\|?*]', '-', title)
+			title = re.sub('[/<>:"/\\|?*]', '-', html.unescape(title))
 			chapnum = zpad(chapter_info[0])
 			if chapnum != "Oneshot":
 				chapnum = 'c' + chapnum
