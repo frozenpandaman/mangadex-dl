@@ -3,14 +3,11 @@
 A Python script to download manga from [MangaDex.org](https://mangadex.org/).
 
 ## Requirements
-  * [Python 3.4+](https://www.python.org/downloads/)
-  * [cloudscraper](https://github.com/VeNoMouS/cloudscraper)
-  * [Node.js](https://nodejs.org/en/download/package-manager/)
+  * [Python 3.4+](https://www.python.org/downloads/) (or [install via Homebrew](https://docs.python-guide.org/starting/install3/osx/) on macOS)
 
 ## Installation & usage
 ```
 $ git clone https://github.com/frozenpandaman/mangadex-dl
-$ pip install cloudscraper
 $ cd mangadex-dl/
 $ python mangadex-dl.py [language_code]
 ```
@@ -20,7 +17,7 @@ For a list of language codes (optional argument; defaults to English), see [the 
 ### Example usage
 ```
 $ ./mangadex-dl.py
-mangadex-dl v0.3
+mangadex-dl v0.4
 Enter manga URL: https://mangadex.org/title/311/yotsuba-to
 
 Title: Yotsuba to!
@@ -42,8 +39,6 @@ Downloading chapter 1...
 
 ### Current limitations
  * The script will download all available releases (in your language) of each chapter specified.
-
-If you are downloading for 10+ minutes straight, you may receive an IP block if trying to browse the site at the same time.
 
 ## License
 
