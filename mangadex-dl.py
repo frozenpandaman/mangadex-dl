@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import requests, time, os, sys, re, json, html, random
+import requests, time, os, sys, re, json, html, zipfile, argparse
 
 A_VERSION = "0.4"
 
@@ -70,7 +70,7 @@ def get_title(uuid, lang_code):
 			exit(1)
 	return title
 
-def dl(manga_id, lang_code):
+def dl(manga_id, lang_code, zip_up=False, input_chap=""):
 	uuid = get_uuid(manga_id)
 
 	title = get_title(uuid, lang_code)
@@ -94,13 +94,19 @@ def dl(manga_id, lang_code):
 	if len(chap_list) == 0:
 		print("No chapters available to download!")
 		exit(0)
+	elif input_chap != "":
+		print()
 	else:
 		print("Available chapters:")
 		print(" " + ', '.join(map(lambda x: x[0], chap_list)))
 
 	# i/o for chapters to download
 	requested_chapters = []
-	dl_list = input("\nEnter chapter(s) to download: ").strip()
+	if input_chap == "":
+		dl_list = input("\nEnter chapter(s) to download: ").strip()
+	else:
+		dl_list = input_chap
+
 	dl_list = [s.strip() for s in dl_list.split(',')]
 	chap_list_only_nums = [i[0] for i in chap_list]
 	for s in dl_list:
@@ -204,20 +210,68 @@ def dl(manga_id, lang_code):
 			time.sleep(0.5) # safely within limit of 5 requests per second
 			# not reporting https://api.mangadex.network/report telemetry for now, sorry
 
+		if zip_up:
+			zip_name = os.path.join(os.getcwd(), "download", title, "{} {} [{}]".format(title, chapnum, groupname)) + ".cbz"
+			chap_folder = os.path.join(os.getcwd(), "download", title, "{} [{}]".format(chapnum, groupname))
+			with zipfile.ZipFile(zip_name, 'w') as myzip:
+				for root, dirs, files in os.walk(chap_folder):
+					for file in files:
+						path = os.path.join(root, file)
+						myzip.write(path, os.path.basename(path))
+
+			print(" Chapter successfully packaged into .cbz")
+
 	print("Done!")
 
 if __name__ == "__main__":
 	print("mangadex-dl v{}".format(A_VERSION))
 
-	lang_code = sys.argv[1] if len(sys.argv) > 1 else "en"
+	if len(sys.argv) > 2:
+		parser = argparse.ArgumentParser()
 
-	url = ""
-	while url == "":
-		url = input("Enter manga URL or ID: ").strip()
+		parser.add_argument("--url", "-u", default="", help="Enter Mangadex URL. Required.")
+		parser.add_argument("--lang", "-l", default="en",
+							help="Set desired language (https://github.com/frozenpandaman/mangadex-dl/wiki/language-codes). Defaults to en if left out.")
+		parser.add_argument("--cbz", "-c", action="store_true", help="Include if you want to package chapter into .cbz")
+		parser.add_argument("--chapter", "-ch", default="", help="Enter desired chapters. Required.")
+
+		args = parser.parse_args()
+
+		if args.url.strip() == "":
+			print("You need to enter a URL")
+			exit()
+		if args.chapter.strip() == "":
+			print("You need to enter chapter(s)")
+			exit()
+		url = args.url
+		lang_code = args.lang
+		cbz_answer = args.cbz
+		input_chap = args.chapter
+
+	else:
+		url = ""
+		while url == "":
+			url = input("Enter manga URL or ID: ").strip()
+
+		cbz_answer = ""
+		while cbz_answer == "":
+			cbz_answer = input("Do you want to package chapters into .cbz?: (y/N) ").strip()
+			if cbz_answer.lower() == "y":
+				cbz_answer = True
+			elif cbz_answer.lower() == "n" or cbz_answer == "":
+				cbz_answer = False
+			else:
+				"Invalid input"
+				cbz_answer = ""
+
+		lang_code = sys.argv[1] if len(sys.argv) > 1 else "en"
+
+		input_chap = ""
+
 	try:
 		manga_id = re.search("[0-9]+", url).group(0)
 	except:
 		print("Error with URL.")
 		exit(1)
 
-	dl(manga_id, lang_code)
+	dl(manga_id, lang_code, cbz_answer, input_chap)

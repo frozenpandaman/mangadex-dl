@@ -14,6 +14,11 @@ $ python mangadex-dl.py [language_code]
 
 For a list of language codes (optional argument; defaults to English), see [the wiki page](https://github.com/frozenpandaman/mangadex-dl/wiki/language-codes).
 
+If you prefer commandline arguments, just run:
+```
+$ python mangadex-dl.py --help
+```
+
 ### Example usage
 ```
 $ ./mangadex-dl.py
