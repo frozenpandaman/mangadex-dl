@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import requests, time, os, sys, re, json, html, zipfile, argparse
+import requests, time, os, sys, re, json, html, zipfile, argparse, shutil
 
-A_VERSION = "0.4"
+A_VERSION = "0.4.1"
 
 def pad_filename(str):
 	digits = re.compile('(\\d+)')
@@ -70,7 +70,7 @@ def get_title(uuid, lang_code):
 			exit(1)
 	return title
 
-def dl(manga_id, lang_code, zip_up=False, input_chap=""):
+def dl(manga_id, lang_code, zip_up):
 	uuid = get_uuid(manga_id)
 
 	title = get_title(uuid, lang_code)
@@ -79,7 +79,16 @@ def dl(manga_id, lang_code, zip_up=False, input_chap=""):
 	# check available chapters & get images
 	chap_list = []
 	r = requests.get("https://api.mangadex.org/manga/{}/feed?limit=0&locales[]={}".format(uuid, lang_code))
-	total = r.json()["total"]
+	try:
+		total = r.json()["total"]
+	except KeyError:
+		print("Error retrieving the chapters list. Did you specify a valid language code?")
+		exit(1)
+
+	if total == 0:
+		print("No chapters available to download!")
+		exit(0)
+
 	offset = 0
 	while offset < total: # if more than 500 chapters!
 		r = requests.get("https://api.mangadex.org/manga/{}/feed?order[chapter]=asc&order[volume]=asc&limit=500&locales[]={}&offset={}".format(uuid, lang_code, offset))
@@ -91,21 +100,13 @@ def dl(manga_id, lang_code, zip_up=False, input_chap=""):
 		offset += 500
 	chap_list.sort(key=float_conversion) # sort numerically by chapter #
 
-	if len(chap_list) == 0:
-		print("No chapters available to download!")
-		exit(0)
-	elif input_chap != "":
-		print()
-	else:
-		print("Available chapters:")
-		print(" " + ', '.join(map(lambda x: x[0], chap_list)))
+	# chap_list is not empty at this point
+	print("Available chapters:")
+	print(" " + ', '.join(map(lambda x: x[0], chap_list)))
 
 	# i/o for chapters to download
 	requested_chapters = []
-	if input_chap == "":
-		dl_list = input("\nEnter chapter(s) to download: ").strip()
-	else:
-		dl_list = input_chap
+	dl_list = input("\nEnter chapter(s) to download: ").strip()
 
 	dl_list = [s.strip() for s in dl_list.split(',')]
 	chap_list_only_nums = [i[0] for i in chap_list]
@@ -117,12 +118,12 @@ def dl(manga_id, lang_code, zip_up=False, input_chap=""):
 			try:
 				lower_bound_i = chap_list_only_nums.index(lower_bound)
 			except ValueError:
-				print("Chapter {} does not exist. Skipping {}.".format(lower_bound, s))
+				print("Chapter {} does not exist. Skipping range {}.".format(lower_bound, s))
 				continue # go to next iteration of loop
 			try:
 				upper_bound_i = chap_list_only_nums.index(upper_bound)
 			except ValueError:
-				print("Chapter {} does not exist. Skipping {}.".format(upper_bound, s))
+				print("Chapter {} does not exist. Skipping range {}.".format(upper_bound, s))
 				continue
 			s = chap_list[lower_bound_i:upper_bound_i+1]
 		elif s.lower() == "oneshot":
@@ -132,17 +133,16 @@ def dl(manga_id, lang_code, zip_up=False, input_chap=""):
 				for idx in oneshot_idxs:
 					s.append(chap_list[idx])
 			else:
-				print("Chapter {} does not exist. Skipping.".format(s))
+				print("Chapter Oneshot does not exist. Skipping.")
 				continue
 		else: # single number (but might be multiple chapters numbered this)
-			try:
-				chap_idxs = [i for i, x in enumerate(chap_list_only_nums) if x == s]
-				s = []
-				for idx in chap_idxs:
-					s.append(chap_list[idx])
-			except ValueError:
+			chap_idxs = [i for i, x in enumerate(chap_list_only_nums) if x == s]
+			if len(chap_idxs) == 0:
 				print("Chapter {} does not exist. Skipping.".format(s))
 				continue
+			s = []
+			for idx in chap_idxs:
+				s.append(chap_list[idx])
 		requested_chapters.extend(s)
 
 	# get chapter json(s)
@@ -218,55 +218,28 @@ def dl(manga_id, lang_code, zip_up=False, input_chap=""):
 					for file in files:
 						path = os.path.join(root, file)
 						myzip.write(path, os.path.basename(path))
-
-			print(" Chapter successfully packaged into .cbz")
+			print("Chapter successfully packaged into .cbz file.")
+			shutil.rmtree(chap_folder) # remove original folder of loose images
 
 	print("Done!")
 
 if __name__ == "__main__":
 	print("mangadex-dl v{}".format(A_VERSION))
 
-	if len(sys.argv) > 2:
-		parser = argparse.ArgumentParser()
+	parser = argparse.ArgumentParser()
+	parser.add_argument("-l", dest="lang", required=False, action="store",
+						help="download in specified language code (default: en)", default="en")
+	parser.add_argument("-a", dest="cbz", required=False, action="store_true",
+						help="packages chapters into .cbz format")
+	args = parser.parse_args()
 
-		parser.add_argument("--url", "-u", default="", help="Enter Mangadex URL. Required.")
-		parser.add_argument("--lang", "-l", default="en",
-							help="Set desired language (https://github.com/frozenpandaman/mangadex-dl/wiki/language-codes). Defaults to en if left out.")
-		parser.add_argument("--cbz", "-c", action="store_true", help="Include if you want to package chapter into .cbz")
-		parser.add_argument("--chapter", "-ch", default="", help="Enter desired chapters. Required.")
+	lang_code = "en" if args.lang is None else str(args.lang)
+	zip_up    = args.cbz
 
-		args = parser.parse_args()
-
-		if args.url.strip() == "":
-			print("You need to enter a URL")
-			exit()
-		if args.chapter.strip() == "":
-			print("You need to enter chapter(s)")
-			exit()
-		url = args.url
-		lang_code = args.lang
-		cbz_answer = args.cbz
-		input_chap = args.chapter
-
-	else:
-		url = ""
-		while url == "":
-			url = input("Enter manga URL or ID: ").strip()
-
-		cbz_answer = ""
-		while cbz_answer == "":
-			cbz_answer = input("Do you want to package chapters into .cbz?: (y/N) ").strip()
-			if cbz_answer.lower() == "y":
-				cbz_answer = True
-			elif cbz_answer.lower() == "n" or cbz_answer == "":
-				cbz_answer = False
-			else:
-				"Invalid input"
-				cbz_answer = ""
-
-		lang_code = sys.argv[1] if len(sys.argv) > 1 else "en"
-
-		input_chap = ""
+	# prompt for manga
+	url = ""
+	while url == "":
+		url = input("Enter manga URL or ID: ").strip()
 
 	try:
 		manga_id = re.search("[0-9]+", url).group(0)
@@ -274,4 +247,4 @@ if __name__ == "__main__":
 		print("Error with URL.")
 		exit(1)
 
-	dl(manga_id, lang_code, cbz_answer, input_chap)
+	dl(manga_id, lang_code, zip_up)
