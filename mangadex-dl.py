@@ -71,7 +71,10 @@ def get_title(uuid, lang_code):
 	return title
 
 def dl(manga_id, lang_code, zip_up):
-	uuid = get_uuid(manga_id)
+	uuid = manga_id
+
+	if manga_id.isnumeric():
+		uuid = get_uuid(manga_id)
 
 	title = get_title(uuid, lang_code)
 	print("\nTITLE: {}".format(html.unescape(title)))
@@ -242,7 +245,7 @@ if __name__ == "__main__":
 		url = input("Enter manga URL or ID: ").strip()
 
 	try:
-		manga_id = re.search("[0-9]+", url).group(0)
+		manga_id = url.split('/')[-1]
 	except:
 		print("Error with URL.")
 		exit(1)
