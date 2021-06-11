@@ -78,7 +78,7 @@ def dl(manga_id, lang_code, zip_up):
 
 	# check available chapters & get images
 	chap_list = []
-	r = requests.get("https://api.mangadex.org/manga/{}/feed?limit=0&locales[]={}".format(uuid, lang_code))
+	r = requests.get("https://api.mangadex.org/manga/{}/feed?limit=0&translatedLanguage[]={}".format(uuid, lang_code))
 	try:
 		total = r.json()["total"]
 	except KeyError:
@@ -91,7 +91,7 @@ def dl(manga_id, lang_code, zip_up):
 
 	offset = 0
 	while offset < total: # if more than 500 chapters!
-		r = requests.get("https://api.mangadex.org/manga/{}/feed?order[chapter]=asc&order[volume]=asc&limit=500&locales[]={}&offset={}".format(uuid, lang_code, offset))
+		r = requests.get("https://api.mangadex.org/manga/{}/feed?order[chapter]=asc&order[volume]=asc&limit=500&translatedLanguage[]={}&offset={}".format(uuid, lang_code, offset))
 		chaps = r.json()
 		for chapter in chaps["results"]:
 			chap_num = chapter["data"]["attributes"]["chapter"]
