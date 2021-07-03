@@ -71,14 +71,17 @@ def get_title(uuid, lang_code):
 	return title
 
 def dl(manga_id, lang_code, zip_up):
-	uuid = get_uuid(manga_id)
+	uuid = manga_id
+
+	if manga_id.isnumeric():
+		uuid = get_uuid(manga_id)
 
 	title = get_title(uuid, lang_code)
 	print("\nTITLE: {}".format(html.unescape(title)))
 
 	# check available chapters & get images
 	chap_list = []
-	r = requests.get("https://api.mangadex.org/manga/{}/feed?limit=0&locales[]={}".format(uuid, lang_code))
+	r = requests.get("https://api.mangadex.org/manga/{}/feed?limit=0&translatedLanguage[]={}".format(uuid, lang_code))
 	try:
 		total = r.json()["total"]
 	except KeyError:
@@ -91,7 +94,7 @@ def dl(manga_id, lang_code, zip_up):
 
 	offset = 0
 	while offset < total: # if more than 500 chapters!
-		r = requests.get("https://api.mangadex.org/manga/{}/feed?order[chapter]=asc&order[volume]=asc&limit=500&locales[]={}&offset={}".format(uuid, lang_code, offset))
+		r = requests.get("https://api.mangadex.org/manga/{}/feed?order[chapter]=asc&order[volume]=asc&limit=500&translatedLanguage[]={}&offset={}".format(uuid, lang_code, offset))
 		chaps = r.json()
 		for chapter in chaps["results"]:
 			chap_num = chapter["data"]["attributes"]["chapter"]
@@ -242,7 +245,7 @@ if __name__ == "__main__":
 		url = input("Enter manga URL or ID: ").strip()
 
 	try:
-		manga_id = re.search("[0-9]+", url).group(0)
+		manga_id = url.split('/')[-1]
 	except:
 		print("Error with URL.")
 		exit(1)
