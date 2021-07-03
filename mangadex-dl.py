@@ -17,7 +17,7 @@
 
 import requests, time, os, sys, re, json, html, zipfile, argparse, shutil
 
-A_VERSION = "0.4.1"
+A_VERSION = "0.5.0"
 
 def pad_filename(str):
 	digits = re.compile('(\\d+)')
@@ -70,7 +70,7 @@ def get_title(uuid, lang_code):
 			exit(1)
 	return title
 
-def dl(manga_id, lang_code, zip_up):
+def dl(manga_id, lang_code, zip_up, ds):
 	uuid = manga_id
 
 	if manga_id.isnumeric():
@@ -162,8 +162,11 @@ def dl(manga_id, lang_code, zip_up):
 		images = []
 		accesstoken = ""
 		chaphash = chapter["data"]["attributes"]["hash"]
-		for page_filename in chapter["data"]["attributes"]["data"]:
-			images.append("{}/data/{}/{}".format(baseurl, chaphash, page_filename))
+		datamode = "dataSaver" if ds else "data"
+		datamode2 = "data-saver" if ds else "data"
+
+		for page_filename in chapter["data"]["attributes"][datamode]:
+			images.append("{}/{}/{}/{}".format(baseurl, datamode2, chaphash, page_filename))
 
 		# get group names & make combined name
 		group_uuids = []
@@ -232,12 +235,15 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-l", dest="lang", required=False, action="store",
 						help="download in specified language code (default: en)", default="en")
+	parser.add_argument("-d", dest="datasaver", required=False, action="store_true",
+						help="downloads images in lower quality")
 	parser.add_argument("-a", dest="cbz", required=False, action="store_true",
 						help="packages chapters into .cbz format")
 	args = parser.parse_args()
 
 	lang_code = "en" if args.lang is None else str(args.lang)
 	zip_up    = args.cbz
+	ds        = args.datasaver
 
 	# prompt for manga
 	url = ""
@@ -250,4 +256,4 @@ if __name__ == "__main__":
 		print("Error with URL.")
 		exit(1)
 
-	dl(manga_id, lang_code, zip_up)
+	dl(manga_id, lang_code, zip_up, ds)
