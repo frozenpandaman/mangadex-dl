@@ -45,6 +45,20 @@ def get_safe(link, count=0, method=requests.get, **kwargs):
     except:
         return get_safe(link, count=count+1, method=method, **kwargs)
 
+def get_safe_binary_data(link, count=0, method=requests.get, **kwargs):
+    if count == 5:
+        raise Exception("API fails to respond or API ratelimit was not reset.")
+    try:
+        r = method(link, **kwargs)
+        if r.status_code == 200:
+            return r.content
+        elif r.headers['X-RateLimit-Remaining'] == 0:
+            while r.headers['X-RateLimit-Retry-After'] > time.time():
+                time.sleep(3)
+            time.sleep(2)
+            return get_safe_binary_data(link, count=count+1, method=method, **kwargs)
+    except:
+        return get_safe_binary_data(link, count=count+1, method=method, **kwargs)
 
 def pad_filename(str):
     digits = re.compile('(\\d+)')
@@ -255,10 +269,10 @@ def dl(manga_id, lang_code, zip_up, ds):
                 print("Skipping download of page: {}...".format(pagenum))
                 continue
 
-            r = requests.get(url)
+            binary_data = get_safe_binary_data(url)
             if r.status_code == 200:
                 with open(outfile + ".temp", 'wb') as f:
-                    f.write(r.content)
+                    f.write(binary_data)
                     print(" Downloaded page {}.".format(pagenum))
                 os.replace(outfile + ".temp", outfile)
             else:
