@@ -32,7 +32,7 @@ __VERSION__ = "0.5.2"
 
 def get_safe(link, count=0, method=requests.get, **kwargs):
     time.sleep(1)
-    if count == 5:
+    if count == 15:
         raise Exception("API fails to respond or API ratelimit was not reset.")
 
     r = method(link, **kwargs)
@@ -44,7 +44,7 @@ def get_safe(link, count=0, method=requests.get, **kwargs):
 
 
 def get_safe_binary_data(link, count=0, method=requests.get, **kwargs):
-    if count == 5:
+    if count == 15:
         raise Exception("API fails to respond or API ratelimit was not reset.")
 
     r = method(link, **kwargs)
