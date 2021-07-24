@@ -47,7 +47,7 @@ def get_safe(link, count=0, method=requests.get, **kwargs):
 
 def get_safe_binary_data(link, count=0, method=requests.get, **kwargs):
     if count == 5:
-        raise Exception("API fails to respond or API ratelimit was not reset.")
+        return None
     try:
         r = method(link, **kwargs)
         if r.status_code == 200:
@@ -270,23 +270,14 @@ def dl(manga_id, lang_code, zip_up, ds):
                 continue
 
             binary_data = get_safe_binary_data(url)
-            if r.status_code == 200:
-                with open(outfile + ".temp", 'wb') as f:
-                    f.write(binary_data)
-                    print(" Downloaded page {}.".format(pagenum))
-                os.replace(outfile + ".temp", outfile)
-            else:
-                # silently try again
-                time.sleep(2)
-                r = requests.get(url)
-                if r.status_code == 200:
-                    with open(outfile + ".temp", 'wb') as f:
-                        f.write(r.content)
-                        print(" Downloaded page {}.".format(pagenum))
-                    os.replace(outfile + ".temp", outfile)
-                else:
-                    print(" Skipping download of page {} - error {}.".format(pagenum, r.status_code))
+            if binary_data is None:
+                print("Skipping download of page {} - error {}.".format(pagenum, r.status_code))
+                continue
 
+            with open(outfile + ".temp", 'wb') as f:
+                f.write(binary_data)
+                print(" Downloaded page {}.".format(pagenum))
+            os.replace(outfile + ".temp", outfile)
             # not reporting https://api.mangadex.network/report telemetry for now, sorry
 
         if zip_up:
