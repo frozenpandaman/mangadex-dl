@@ -31,33 +31,27 @@ __VERSION__ = "0.5.2"
 
 
 def get_safe(link, count=0, method=requests.get, **kwargs):
+    time.sleep(1)
     if count == 5:
         raise Exception("API fails to respond or API ratelimit was not reset.")
-    try:
-        r = method(link, **kwargs)
-        if r.status_code == 200:
-            return r.json()
-        elif r.headers['X-RateLimit-Remaining'] == 0:
-            while r.headers['X-RateLimit-Retry-After'] > time.time():
-                time.sleep(3)
-            time.sleep(2)
-            return get_safe(link, count=count+1, method=method, **kwargs)
-    except:
+
+    r = method(link, **kwargs)
+    if r.status_code == 200:
+        return r.json()
+    else:
+        time.sleep(5)
         return get_safe(link, count=count+1, method=method, **kwargs)
+
 
 def get_safe_binary_data(link, count=0, method=requests.get, **kwargs):
     if count == 5:
-        return None
-    try:
-        r = method(link, **kwargs)
-        if r.status_code == 200:
-            return r.content
-        elif r.headers['X-RateLimit-Remaining'] == 0:
-            while r.headers['X-RateLimit-Retry-After'] > time.time():
-                time.sleep(3)
-            time.sleep(2)
-            return get_safe_binary_data(link, count=count+1, method=method, **kwargs)
-    except:
+        raise Exception("API fails to respond or API ratelimit was not reset.")
+
+    r = method(link, **kwargs)
+    if r.status_code == 200:
+        return r.content
+    else:
+        time.sleep(5)
         return get_safe_binary_data(link, count=count+1, method=method, **kwargs)
 
 def pad_filename(str):
