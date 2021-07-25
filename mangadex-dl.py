@@ -31,7 +31,7 @@ __VERSION__ = "0.5.2"
 
 
 def get_safe(link, count=0, method=requests.get, **kwargs):
-    time.sleep(1)
+    time.sleep(0.5)
     if count == 15:
         raise Exception("API fails to respond or API ratelimit was not reset.")
 
