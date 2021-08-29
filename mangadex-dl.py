@@ -151,9 +151,33 @@ def dl(manga_id, lang_code, zip_up, ds):
 	# get chapter json(s)
 	print()
 	for chapter_info in requested_chapters:
+		group_uuids = []
+		for entry in chapter["relationships"]:
+			if entry["type"] == "scanlation_group":
+				group_uuids.append(entry["id"])
+
+		groups = ""
+		for i, group in enumerate(group_uuids):
+			if i > 0:
+				groups += " & "
+				r = requests.get("https://api.mangadex.org/group/{}".format(group)).json()
+				name = r["data"]["attributes"]["name"]
+				groups += name
+
+		groupname = re.sub('[/<>:"/\\|?*]', '-', groups)
+		groupname = groupname if groupname else "No Group"
+
+		chapnum = zpad(chapter_info[0])
+		if chapnum != "Oneshot" and chapnum.isnumeric():
+			chapnum = 'c' + chapnum
+		title = re.sub('[/<>:"/\\|?*]', '-', html.unescape(title))
+
+		zip_name = os.path.join(os.getcwd(), "download", title, "{} {} [{}]".format(title, chapnum, groupname)) + ".cbz"
+		if os.path.isfile(zip_name):
+			print("Skipping download of {} - {} because it is already downloaded.".format(title, chapnum))
+			continue
 		print("Downloading chapter {}...".format(chapter_info[0]))
-		r = requests.get("https://api.mangadex.org/chapter/{}".format(chapter_info[1]))
-		chapter = json.loads(r.text)
+		chapter = requests.get("https://api.mangadex.org/chapter/{}".format(chapter_info[1])).json()
 
 		r = requests.get("https://api.mangadex.org/at-home/server/{}".format(chapter_info[1]))
 		baseurl = r.json()["baseUrl"]
@@ -198,26 +222,33 @@ def dl(manga_id, lang_code, zip_up, ds):
 			dest_filename = pad_filename("{}{}".format(pagenum, ext))
 			outfile = os.path.join(dest_folder, dest_filename)
 
+			if os.path.isfile(outfile + ".temp"):
+				os.remove(outfile + ".temp")
+			elif os.path.isfile(outfile):
+				print("Skipping download of page: {}...".format(pagenum))
+				continue
+
 			r = requests.get(url)
 			if r.status_code == 200:
-				with open(outfile, 'wb') as f:
+				with open(outfile + ".temp", 'wb') as f:
 					f.write(r.content)
 					print(" Downloaded page {}.".format(pagenum))
+				os.replace(outfile + ".temp", outfile)
 			else:
 				# silently try again
 				time.sleep(2)
 				r = requests.get(url)
 				if r.status_code == 200:
-					with open(outfile, 'wb') as f:
+					with open(outfile + ".temp", 'wb') as f:
 						f.write(r.content)
 						print(" Downloaded page {}.".format(pagenum))
+					os.replace(outfile + ".temp", outfile)
 				else:
 					print(" Skipping download of page {} - error {}.".format(pagenum, r.status_code))
 			time.sleep(0.5) # safely within limit of 5 requests per second
 			# not reporting https://api.mangadex.network/report telemetry for now, sorry
 
 		if zip_up:
-			zip_name = os.path.join(os.getcwd(), "download", title, "{} {} [{}]".format(title, chapnum, groupname)) + ".cbz"
 			chap_folder = os.path.join(os.getcwd(), "download", title, "{} [{}]".format(chapnum, groupname))
 			with zipfile.ZipFile(zip_name, 'w') as myzip:
 				for root, dirs, files in os.walk(chap_folder):
