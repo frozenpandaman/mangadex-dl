@@ -192,21 +192,6 @@ def dl(manga_id, lang_code, zip_up, ds):
 		for page_filename in chapter["data"]["attributes"][datamode]:
 			images.append("{}/{}/{}/{}".format(baseurl, datamode2, chaphash, page_filename))
 
-		# get group names & make combined name
-		group_uuids = []
-		for entry in chapter["relationships"]:
-			if entry["type"] == "scanlation_group":
-				group_uuids.append(entry["id"])
-
-		groups = ""
-		for i, group in enumerate(group_uuids):
-			if i > 0:
-				groups += " & "
-			r = requests.get("https://api.mangadex.org/group/{}".format(group))
-			name = r.json()["data"]["attributes"]["name"]
-			groups += name
-		groupname = re.sub('[/<>:"/\\|?*]', '-', groups)
-
 		# download images
 		for pagenum, url in enumerate(images, 1):
 			filename = os.path.basename(url)
