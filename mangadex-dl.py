@@ -60,14 +60,18 @@ def get_uuid(manga_id):
 def get_title(uuid, lang_code):
 	r = requests.get("https://api.mangadex.org/manga/{}".format(uuid))
 	resp = r.json()
+
 	try:
 		title = resp["data"]["attributes"]["title"][lang_code]
 	except KeyError: # if no manga title in requested dl language
 		try:
 			title = resp["data"]["attributes"]["title"]["en"]
 		except:
-			print("Error - could not retrieve manga title.")
-			exit(1)
+			try:
+				title = resp["data"]["attributes"]["title"]["jp"]
+			except:
+				print("Error - could not retrieve manga title.")
+				exit(1)
 	return title
 
 def dl(manga_id, lang_code, zip_up, ds):
@@ -267,7 +271,14 @@ if __name__ == "__main__":
 		url = input("Enter manga URL or ID: ").strip()
 
 	try:
-		manga_id = url.split('/')[-1]
+		manga_id = url.split('/')
+		if len(manga_id) == 5:
+			manga_id = manga_id[-1]
+		elif len(manga_id) == 6:
+			manga_id = manga_id[-2]
+		else:
+			print("Error with URL.")
+			exit(1)
 	except:
 		print("Error with URL.")
 		exit(1)
