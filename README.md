@@ -7,6 +7,7 @@ A Python script to download manga from [MangaDex.org](https://mangadex.org/).
 
 ## Installation & usage
 ```
+$ python -m pip install requests
 $ git clone https://github.com/frozenpandaman/mangadex-dl
 $ cd mangadex-dl/
 $ python mangadex-dl.py [-l language_code] [-d] [-a]
