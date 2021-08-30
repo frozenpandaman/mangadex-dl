@@ -164,9 +164,9 @@ def dl(manga_id, lang_code, zip_up, ds):
 		for i, group in enumerate(group_uuids):
 			if i > 0:
 				groups += " & "
-				r = requests.get("https://api.mangadex.org/group/{}".format(group)).json()
-				name = r["data"]["attributes"]["name"]
-				groups += name
+			r = requests.get("https://api.mangadex.org/group/{}".format(group)).json()
+			name = r["data"]["attributes"]["name"]
+			groups += name
 
 		groupname = re.sub('[/<>:"/\\|?*]', '-', groups)
 		groupname = groupname if groupname else "No Group"
