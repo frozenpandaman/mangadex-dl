@@ -23,8 +23,8 @@ You can also execute the script via `./mangadex-dl.py` on macOS and Linux. On Wi
 ### Example usage
 ```
 $ ./mangadex-dl.py
-mangadex-dl v0.5.0
-Enter manga URL: https://mangadex.org/title/58be6aa6-06cb-4ca5-bd20-f1392ce451fb
+mangadex-dl v0.5.1
+Enter manga URL: https://mangadex.org/title/58be6aa6-06cb-4ca5-bd20-f1392ce451fb/yotsuba-to
 
 Title: Yotsuba to!
 Available chapters:
