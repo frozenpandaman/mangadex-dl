@@ -109,9 +109,9 @@ def dl(manga_id, lang_code, zip_up, ds):
 	while offset < total: # if more than 500 chapters!
 		r = requests.get("https://api.mangadex.org/manga/{}/feed?order[chapter]=asc&order[volume]=asc&limit=500&translatedLanguage[]={}&offset={}".format(uuid, lang_code, offset))
 		chaps = r.json()
-		for chapter in chaps["results"]:
-			chap_num = chapter["data"]["attributes"]["chapter"]
-			chap_uuid = chapter["data"]["id"]
+		for chapter in chaps["data"]:
+			chap_num = chapter["attributes"]["chapter"]
+			chap_uuid = chapter["id"]
 			chap_list.append(("Oneshot", chap_uuid) if chap_num == None else (chap_num, chap_uuid))
 		offset += 500
 	chap_list.sort(key=float_conversion) # sort numerically by chapter #
@@ -183,7 +183,7 @@ def dl(manga_id, lang_code, zip_up, ds):
 
 		# get group names & make combined name
 		group_uuids = []
-		for entry in chapter["relationships"]:
+		for entry in chapter["data"]["relationships"]:
 			if entry["type"] == "scanlation_group":
 				group_uuids.append(entry["id"])
 
