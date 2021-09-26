@@ -18,6 +18,8 @@ The `-d` flag, if present, downloads page images in lower quality (higher JPG co
 
 The `-a` flag, if present, packages downloaded chapters into .cbz [comic book archive](https://en.wikipedia.org/wiki/Comic_book_archive) files.
 
+The `-o` flag, if present, selects the base directory for where to store the downloaded chapters. The default is "download".
+
 You can also execute the script via `./mangadex-dl.py` on macOS and Linux. On Windows, use a backslash.
 
 ### Example usage
