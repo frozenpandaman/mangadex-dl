@@ -108,10 +108,10 @@ def dl(manga_id, lang_code, zip_up, ds, outdir):
 	offset = 0
 	while offset < total: # if more than 500 chapters!
 		r = requests.get("https://api.mangadex.org/manga/{}/feed?order[chapter]=asc&order[volume]=asc&limit=500&translatedLanguage[]={}&offset={}".format(uuid, lang_code, offset))
-		chapters = r.json()["data"]
-		for chapter in chapters:
-			chap_num = chapter["attributes"]["chapter"]
-			chap_uuid = chapter["id"]
+		chaps = r.json()
+		for chapter in chaps["results"]:
+			chap_num = chapter["data"]["attributes"]["chapter"]
+			chap_uuid = chapter["data"]["id"]
 			chap_list.append(("Oneshot", chap_uuid) if chap_num == None else (chap_num, chap_uuid))
 		offset += 500
 	chap_list.sort(key=float_conversion) # sort numerically by chapter #
@@ -166,7 +166,7 @@ def dl(manga_id, lang_code, zip_up, ds, outdir):
 	for chapter_info in requested_chapters:
 		print("Downloading chapter {}...".format(chapter_info[0]))
 		r = requests.get("https://api.mangadex.org/chapter/{}".format(chapter_info[1]))
-		chapter = json.loads(r.text)["data"]
+		chapter = json.loads(r.text)
 
 		r = requests.get("https://api.mangadex.org/at-home/server/{}".format(chapter_info[1]))
 		baseurl = r.json()["baseUrl"]
@@ -174,11 +174,11 @@ def dl(manga_id, lang_code, zip_up, ds, outdir):
 		# make url list
 		images = []
 		accesstoken = ""
-		chaphash = chapter["attributes"]["hash"]
+		chaphash = chapter["data"]["attributes"]["hash"]
 		datamode = "dataSaver" if ds else "data"
 		datamode2 = "data-saver" if ds else "data"
 
-		for page_filename in chapter["attributes"][datamode]:
+		for page_filename in chapter["data"]["attributes"][datamode]:
 			images.append("{}/{}/{}/{}".format(baseurl, datamode2, chaphash, page_filename))
 
 		# get group names & make combined name
