@@ -18,9 +18,26 @@ The `-l` flag allows you to download releases in languages other than English. F
 
 The `-d` flag, if present, downloads page images in lower quality (higher JPG compression/"data saver").
 
-The `-a` flag, if present, packages downloaded chapters into .cbz [comic book archive](https://en.wikipedia.org/wiki/Comic_book_archive) files.
+The `-c` flag, if present, packages downloaded chapters into .cbz [comic book archive](https://en.wikipedia.org/wiki/Comic_book_archive) files.
+
+The `-s` flag, if present, will give IDs of given manga. 
 
 You can also execute the script via `./mangadex-dl.py` on macOS and Linux. On Windows, use a backslash.
+
+
+### Database
+
+-Added Database using sqlite3 for ongoing manga
+
+-The `-v` flag, if present, will show your local db.
+
+-The `-a` flag, if present, will added certain manga in your db , you only need to provide ID rest is feched from api.
+
+-The `-r` flag, if present, will remove certain manga from your db, you need to provide on ID of that manga.
+
+-The `-e` flag, if present, will let you edit chapter number for certain manga in your db , again you ID of that manga.
+
+-The `-u` flag, if present, will update manga from your library , currently it'll download all the update that it recieves , will add custom selection later.
 
 ### Example usage
 ```

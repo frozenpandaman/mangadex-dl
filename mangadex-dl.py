@@ -15,36 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import requests, time, os, sys, re, json, html, zipfile, argparse, shutil
+import requests, os,re, html, argparse
+
+from db import adddb, edit_ch, removedb, updater, viewdb , float_conversion , find_id_in_url, downloader, conn
+
 
 A_VERSION = "0.5.2"
 
-def pad_filename(str):
-	digits = re.compile('(\\d+)')
-	pos = digits.search(str)
-	if pos:
-		return str[1:pos.start()] + pos.group(1).zfill(3) + str[pos.end():]
-	else:
-		return str
-
-def float_conversion(tupl):
-	try:
-		x = float(tupl[0]) # (chap_num, chap_uuid)
-	except ValueError: # empty string for oneshot
-		x = 0
-	return x
-
-def find_id_in_url(url_parts):
-	for part in url_parts:
-		if "-" in part:
-			return part
-
-def zpad(num):
-	if "." in num:
-		parts = num.split('.')
-		return "{}.{}".format(parts[0].zfill(3), parts[1])
-	else:
-		return num.zfill(3)
 
 def get_uuid(manga_id):
 	headers = {'Content-Type': 'application/json'}
@@ -75,13 +52,23 @@ def get_title(uuid, lang_code):
 			exit(1)
 	return title
 
-def uniquify(title, chapnum, groupname):
-	counter = 1
-	dest_folder = os.path.join(os.getcwd(), "download", title, "{} [{}]".format(chapnum, groupname))
-	while os.path.exists(dest_folder):
-		dest_folder = os.path.join(os.getcwd(), "download", title, "{}-{} [{}]".format(chapnum, counter, groupname))
-		counter += 1
-	return dest_folder
+
+def search(title):
+	a = requests.get("https://api.mangadex.org/manga/?limit=25&offset=0&title={}".format(title))
+	data = a.json()
+	end = data['total']
+
+	if end<10:
+		end = end
+	else:
+		end = 10
+	for i in range(end):
+		ID = data['data'][i]['id']
+		Tit = data['data'][i]['attributes']['title']['en']
+		Chs = data['data'][i]['attributes']['lastChapter']
+		print(f'---\n{i+1}:{Tit}\nID:\"{ID}\"\nLatest_chapter:\"{Chs}"')
+
+
 
 def dl(manga_id, lang_code, zip_up, ds):
 	uuid = manga_id
@@ -160,116 +147,74 @@ def dl(manga_id, lang_code, zip_up, ds):
 			for idx in chap_idxs:
 				s.append(chap_list[idx])
 		requested_chapters.extend(s)
+		downloader(requested_chapters ,title)
+
 
 	# get chapter json(s)
 	print()
-	for chapter_info in requested_chapters:
-		print("Downloading chapter {}...".format(chapter_info[0]))
-		r = requests.get("https://api.mangadex.org/chapter/{}".format(chapter_info[1]))
-		chapter = json.loads(r.text)
 
-		r = requests.get("https://api.mangadex.org/at-home/server/{}".format(chapter_info[1]))
-		baseurl = r.json()["baseUrl"]
 
-		# make url list
-		images = []
-		accesstoken = ""
-		chaphash = chapter["data"]["attributes"]["hash"]
-		datamode = "dataSaver" if ds else "data"
-		datamode2 = "data-saver" if ds else "data"
 
-		for page_filename in chapter["data"]["attributes"][datamode]:
-			images.append("{}/{}/{}/{}".format(baseurl, datamode2, chaphash, page_filename))
 
-		# get group names & make combined name
-		group_uuids = []
-		for entry in chapter["data"]["relationships"]:
-			if entry["type"] == "scanlation_group":
-				group_uuids.append(entry["id"])
 
-		groups = ""
-		for i, group in enumerate(group_uuids):
-			if i > 0:
-				groups += " & "
-			r = requests.get("https://api.mangadex.org/group/{}".format(group))
-			name = r.json()["data"]["attributes"]["name"]
-			groups += name
-		groupname = re.sub('[/<>:"/\\|?*]', '-', groups)
-
-		title = re.sub('[/<>:"/\\|?*]', '-', html.unescape(title))
-		chapnum = zpad(chapter_info[0])
-		if chapnum != "Oneshot":
-			chapnum = 'c' + chapnum
-
-		dest_folder = uniquify(title, chapnum, groupname)
-		if not os.path.exists(dest_folder):
-			os.makedirs(dest_folder)
-
-		# download images
-		for pagenum, url in enumerate(images, 1):
-			filename = os.path.basename(url)
-			ext = os.path.splitext(filename)[1]
-
-			dest_filename = pad_filename("{}{}".format(pagenum, ext))
-			outfile = os.path.join(dest_folder, dest_filename)
-
-			r = requests.get(url)
-			if r.status_code == 200:
-				with open(outfile, 'wb') as f:
-					f.write(r.content)
-					print(" Downloaded page {}.".format(pagenum))
-			else:
-				# silently try again
-				time.sleep(2)
-				r = requests.get(url)
-				if r.status_code == 200:
-					with open(outfile, 'wb') as f:
-						f.write(r.content)
-						print(" Downloaded page {}.".format(pagenum))
-				else:
-					print(" Skipping download of page {} - error {}.".format(pagenum, r.status_code))
-			time.sleep(0.5) # safely within limit of 5 requests per second
-			# not reporting https://api.mangadex.network/report telemetry for now, sorry
-
-		if zip_up:
-			zip_name = os.path.join(os.getcwd(), "download", title, "{} {} [{}]".format(title, chapnum, groupname)) + ".cbz"
-			chap_folder = os.path.join(os.getcwd(), "download", title, "{} [{}]".format(chapnum, groupname))
-			with zipfile.ZipFile(zip_name, 'w') as myzip:
-				for root, dirs, files in os.walk(chap_folder):
-					for file in files:
-						path = os.path.join(root, file)
-						myzip.write(path, os.path.basename(path))
-			print("Chapter successfully packaged into .cbz file.")
-			shutil.rmtree(chap_folder) # remove original folder of loose images
-
-	print("Done!")
 
 if __name__ == "__main__":
 	print("mangadex-dl v{}".format(A_VERSION))
 
 	parser = argparse.ArgumentParser()
+	parser.add_argument('-s', dest='search', required=False, action='store',
+						help='Title of the Manga')
 	parser.add_argument("-l", dest="lang", required=False, action="store",
 						help="download in specified language code (default: en)", default="en")
 	parser.add_argument("-d", dest="datasaver", required=False, action="store_true",
 						help="downloads images in lower quality")
-	parser.add_argument("-a", dest="cbz", required=False, action="store_true",
+	parser.add_argument("-c", dest="cbz", required=False, action="store_true",
 						help="packages chapters into .cbz format")
+	parser.add_argument('-v', dest='view', required=False, nargs='?', const=' ',
+						 help='View local db')
+	parser.add_argument('-a', dest='add', required=False, action='store',
+						 help='Provide id for manga to add it in db')
+	parser.add_argument('-r', dest='remove', required=False, action='store',
+						 help='Provide id for manga to remove it from db')
+	parser.add_argument('-e', dest='edit', required=False, action='store',
+						 help='Edit chapter number')
+	parser.add_argument('-u', dest='update', required=False, nargs='?', const=' ',
+						 help='Fetchs update from mangadex for manga in db')
+	
 	args = parser.parse_args()
 
 	lang_code = "en" if args.lang is None else str(args.lang)
 	zip_up    = args.cbz
 	ds        = args.datasaver
 
-	# prompt for manga
-	url = ""
-	while url == "":
-		url = input("Enter manga URL or ID: ").strip()
+	if args.search:
+		 title = args.search
+		 search(title)
+	elif args.view:
+		viewdb()
+	elif args.add:
+		_id = args.add
+		adddb(_id)
+	elif args.remove:
+		_id = args.remove
+		removedb(_id)
+	elif args.edit:
+		_id = args.edit
+		edit_ch(_id)
+	elif args.update:
+		updater()
+	else:
+		url = ""
+			# prompt for manga
+		url = ""
+		while url == "":
+			url = input("Enter manga URL or ID: ").strip()
 
-	try:
-		url_parts = url.split('/')
-		manga_id = find_id_in_url(url_parts)
-	except:
-		print("Error with URL.")
-		exit(1)
-
-	dl(manga_id, lang_code, zip_up, ds)
+		try:
+			url_parts = url.split('/')
+			manga_id = find_id_in_url(url_parts)
+		except:
+			print("Error with URL.")
+			exit(1)
+		dl(manga_id, lang_code, zip_up, ds)
+conn.close()
