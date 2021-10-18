@@ -69,10 +69,19 @@ def get_title(uuid, lang_code):
 		title = resp["data"]["attributes"]["title"][lang_code]
 	except KeyError: # if no manga title in requested dl language
 		try:
-			title = resp["data"]["attributes"]["title"]["en"]
+			# lookup in altTitles
+			alt_titles = {}
+			titles = resp["data"]["attributes"]["altTitles"]
+			for val in titles:
+				alt_titles.update(val)
+			title = alt_titles[lang_code]
 		except:
-			print("Error - could not retrieve manga title.")
-			exit(1)
+			# fallback to English title
+			try:
+				title = resp["data"]["attributes"]["title"]["en"]
+			except:
+				print("Error - could not retrieve manga title.")
+				exit(1)
 	return title
 
 def uniquify(title, chapnum, groupname):
