@@ -84,15 +84,15 @@ def get_title(uuid, lang_code):
 				exit(1)
 	return title
 
-def uniquify(title, chapnum, groupname):
+def uniquify(title, chapnum, groupname, basedir):
 	counter = 1
-	dest_folder = os.path.join(os.getcwd(), "download", title, "{} [{}]".format(chapnum, groupname))
+	dest_folder = os.path.join(os.getcwd(), basedir, title, "{} [{}]".format(chapnum, groupname))
 	while os.path.exists(dest_folder):
-		dest_folder = os.path.join(os.getcwd(), "download", title, "{}-{} [{}]".format(chapnum, counter, groupname))
+		dest_folder = os.path.join(os.getcwd(), basedir, title, "{}-{} [{}]".format(chapnum, counter, groupname))
 		counter += 1
 	return dest_folder
 
-def dl(manga_id, lang_code, zip_up, ds):
+def dl(manga_id, lang_code, zip_up, ds, outdir):
 	uuid = manga_id
 
 	if manga_id.isnumeric():
@@ -211,7 +211,7 @@ def dl(manga_id, lang_code, zip_up, ds):
 		if chapnum != "Oneshot":
 			chapnum = 'c' + chapnum
 
-		dest_folder = uniquify(title, chapnum, groupname)
+		dest_folder = uniquify(title, chapnum, groupname, outdir)
 		if not os.path.exists(dest_folder):
 			os.makedirs(dest_folder)
 
@@ -242,8 +242,8 @@ def dl(manga_id, lang_code, zip_up, ds):
 			# not reporting https://api.mangadex.network/report telemetry for now, sorry
 
 		if zip_up:
-			zip_name = os.path.join(os.getcwd(), "download", title, "{} {} [{}]".format(title, chapnum, groupname)) + ".cbz"
-			chap_folder = os.path.join(os.getcwd(), "download", title, "{} [{}]".format(chapnum, groupname))
+			zip_name = os.path.join(os.getcwd(), outdir, title, "{} {} [{}]".format(title, chapnum, groupname)) + ".cbz"
+			chap_folder = os.path.join(os.getcwd(), outdir, title, "{} [{}]".format(chapnum, groupname))
 			with zipfile.ZipFile(zip_name, 'w') as myzip:
 				for root, dirs, files in os.walk(chap_folder):
 					for file in files:
@@ -261,14 +261,14 @@ if __name__ == "__main__":
 	parser.add_argument("-l", dest="lang", required=False, action="store",
 						help="download in specified language code (default: en)", default="en")
 	parser.add_argument("-d", dest="datasaver", required=False, action="store_true",
-						help="downloads images in lower quality")
+						help="download images in lower quality")
 	parser.add_argument("-a", dest="cbz", required=False, action="store_true",
-						help="packages chapters into .cbz format")
+						help="package chapters into .cbz format")
+	parser.add_argument("-o", dest="outdir", required=False, action="store", default="download",
+						help="specify name of output directory")
 	args = parser.parse_args()
 
 	lang_code = "en" if args.lang is None else str(args.lang)
-	zip_up    = args.cbz
-	ds        = args.datasaver
 
 	# prompt for manga
 	url = ""
@@ -282,4 +282,4 @@ if __name__ == "__main__":
 		print("Error with URL.")
 		exit(1)
 
-	dl(manga_id, lang_code, zip_up, ds)
+	dl(manga_id, lang_code, args.cbz, args.datasaver, args.outdir)
