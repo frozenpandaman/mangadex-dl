@@ -4,10 +4,12 @@ A Python script to download manga from [MangaDex.org](https://mangadex.org/).
 
 ## Requirements
   * [Python 3.4+](https://www.python.org/downloads/) (or [install via Homebrew](https://docs.python-guide.org/starting/install3/osx/) on macOS)
+  * Python's [Requests](https://docs.python-requests.org/en/latest/) library
 
 ## Installation & usage
 ```
 $ git clone https://github.com/frozenpandaman/mangadex-dl
+$ pip install requests
 $ cd mangadex-dl/
 $ python mangadex-dl.py [-l language_code] [-d] [-a] [-o dl_dir]
 ```
@@ -24,7 +26,7 @@ You can also execute the script via `./mangadex-dl.py` on macOS and Linux. On Wi
 ### Example usage
 ```
 $ ./mangadex-dl.py
-mangadex-dl v0.5.1
+mangadex-dl v0.5.2
 Enter manga URL: https://mangadex.org/title/58be6aa6-06cb-4ca5-bd20-f1392ce451fb/yotsuba-to
 
 Title: Yotsuba to!
