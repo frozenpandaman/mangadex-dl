@@ -232,7 +232,6 @@ def dl(manga_id, lang_code, zip_up, ds, outdir):
 			# not reporting https://api.mangadex.network/report telemetry for now, sorry
 
 		if zip_up:
-			# TODO maybe do this with uniquify function too? same code written twice
 			zip_name = os.path.join(os.getcwd(), outdir, title, "{} {} [{}]".format(title, chapnum, groupname)) + ".cbz"
 			chap_folder = os.path.join(os.getcwd(), outdir, title, "{} [{}]".format(chapnum, groupname))
 			with zipfile.ZipFile(zip_name, 'w') as myzip:
@@ -252,11 +251,11 @@ if __name__ == "__main__":
 	parser.add_argument("-l", dest="lang", required=False, action="store",
 						help="download in specified language code (default: en)", default="en")
 	parser.add_argument("-d", dest="datasaver", required=False, action="store_true",
-						help="downloads images in lower quality")
+						help="download images in lower quality")
 	parser.add_argument("-a", dest="cbz", required=False, action="store_true",
-						help="packages chapters into .cbz format")
+						help="package chapters into .cbz format")
 	parser.add_argument("-o", dest="outdir", required=False, action="store", default="download",
-						help="base output directory")
+						help="specify name of output directory")
 	args = parser.parse_args()
 
 	lang_code = "en" if args.lang is None else str(args.lang)
@@ -273,10 +272,4 @@ if __name__ == "__main__":
 		print("Error with URL.")
 		exit(1)
 
-	dl(
-		manga_id,
-		lang_code,
-		args.cbz,
-		args.datasaver,
-		args.outdir
-	)
+	dl(manga_id, lang_code, args.cbz, args.datasaver, args.outdir)
