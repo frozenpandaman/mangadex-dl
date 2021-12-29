@@ -129,7 +129,7 @@ def dl(manga_id, lang_code, zip_up, ds, outdir):
 				"&translatedLanguage[]={}&offset={}&{}"
 				.format(uuid, lang_code, offset, content_ratings))
 		chaps = r.json()
-		chap_list = chaps["data"]
+		chap_list += chaps["data"]
 		offset += 500
 
 	# chap_list is not empty at this point
