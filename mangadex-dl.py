@@ -104,12 +104,18 @@ def dl(manga_id, lang_code, zip_up, ds, outdir):
 
 	# check available chapters & get images
 	chap_list = []
-	content_ratings = "contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic"
-	r = requests.get("https://api.mangadex.org/manga/{}/feed?limit=0&translatedLanguage[]={}&{}".format(uuid, lang_code, content_ratings))
+	content_ratings = "contentRating[]=safe"\
+			"&contentRating[]=suggestive"\
+			"&contentRating[]=erotica"\
+			"&contentRating[]=pornographic"
+	r = requests.get("https://api.mangadex.org/manga/{}/feed"\
+			"?limit=0&translatedLanguage[]={}&{}"
+			.format(uuid, lang_code, content_ratings))
 	try:
 		total = r.json()["total"]
 	except KeyError:
-		print("Error retrieving the chapters list. Did you specify a valid language code?")
+		print("Error retrieving the chapters list. "\
+				"Did you specify a valid language code?")
 		exit(1)
 
 	if total == 0:
@@ -118,14 +124,20 @@ def dl(manga_id, lang_code, zip_up, ds, outdir):
 
 	offset = 0
 	while offset < total: # if more than 500 chapters!
-		r = requests.get("https://api.mangadex.org/manga/{}/feed?order[chapter]=asc&order[volume]=asc&limit=500&translatedLanguage[]={}&offset={}&{}".format(uuid, lang_code, offset, content_ratings))
+		r = requests.get("https://api.mangadex.org/manga/{}/feed"\
+				"?order[chapter]=asc&order[volume]=asc&limit=500"\
+				"&translatedLanguage[]={}&offset={}&{}"
+				.format(uuid, lang_code, offset, content_ratings))
 		chaps = r.json()
 		chap_list = chaps["data"]
 		offset += 500
 
 	# chap_list is not empty at this point
 	print("Available chapters:")
-	print(" " + ', '.join(map(lambda x: "Oneshot" if x["attributes"]["chapter"] is None else x["attributes"]["chapter"], chap_list)))
+	print(" " + ', '.join(map(
+		lambda x: "Oneshot" if x["attributes"]["chapter"] is None
+		else x["attributes"]["chapter"],
+		chap_list)))
 
 	# i/o for chapters to download
 	requested_chapters = []
@@ -141,17 +153,21 @@ def dl(manga_id, lang_code, zip_up, ds, outdir):
 			try:
 				lower_bound_i = chap_list_only_nums.index(lower_bound)
 			except ValueError:
-				print("Chapter {} does not exist. Skipping range {}.".format(lower_bound, s))
+				print("Chapter {} does not exist. Skipping range {}."
+						.format(lower_bound, s))
 				continue # go to next iteration of loop
 			try:
 				upper_bound_i = chap_list_only_nums.index(upper_bound)
 			except ValueError:
-				print("Chapter {} does not exist. Skipping range {}.".format(upper_bound, s))
+				print("Chapter {} does not exist. Skipping range {}."
+						.format(upper_bound, s))
 				continue
 			s = chap_list[lower_bound_i:upper_bound_i+1]
 		elif s.lower() == "oneshot":
 			if None in chap_list_only_nums:
-				oneshot_idxs = [i for i, x in enumerate(chap_list_only_nums) if x is None]
+				oneshot_idxs = [i
+						for i, x in enumerate(chap_list_only_nums)
+						if x is None]
 				s = []
 				for idx in oneshot_idxs:
 					s.append(chap_list[idx])
@@ -172,9 +188,13 @@ def dl(manga_id, lang_code, zip_up, ds, outdir):
 	print()
 	progress_indicator = ["|", "/", "–", "\\"]
 	for index, chapter in enumerate(requested_chapters):
-		print("Downloading chapter {} [{}/{}]".format(chapter["attributes"]["chapter"] if chapter["attributes"]["chapter"] is not None else "Oneshot", index+1, len(requested_chapters)))
+		print("Downloading chapter {} [{}/{}]".format(
+			chapter["attributes"]["chapter"]
+			if chapter["attributes"]["chapter"] is not None
+			else "Oneshot", index+1, len(requested_chapters)))
 
-		r = requests.get("https://api.mangadex.org/at-home/server/{}".format(chapter["id"]))
+		r = requests.get("https://api.mangadex.org/at-home/server/{}"
+				.format(chapter["id"]))
 		baseurl = r.json()["baseUrl"]
 
 		# make url list
@@ -186,7 +206,8 @@ def dl(manga_id, lang_code, zip_up, ds, outdir):
 		errored = False
 
 		for page_filename in chapter["attributes"][datamode]:
-			images.append("{}/{}/{}/{}".format(baseurl, datamode2, chaphash, page_filename))
+			images.append("{}/{}/{}/{}".format(
+				baseurl, datamode2, chaphash, page_filename))
 
 		# get group names & make combined name
 		group_uuids = []
@@ -222,8 +243,10 @@ def dl(manga_id, lang_code, zip_up, ds, outdir):
 			outfile = os.path.join(dest_folder, dest_filename)
 
 			r = requests.get(url)
-			# go back to beginning of the line and erase the line before printing more
-			print("\r\033[K{} Downloading pages [{}/{}]".format(progress_indicator[(pagenum-1)%4], pagenum, len(images)), end='', flush=True)
+			# go back to the beginning and erase the line before printing more
+			print("\r\033[K{} Downloading pages [{}/{}]".format(
+				progress_indicator[(pagenum-1)%4], pagenum, len(images)),
+				end='', flush=True)
 			if r.status_code == 200:
 				with open(outfile, 'wb') as f:
 					f.write(r.content)
@@ -237,13 +260,16 @@ def dl(manga_id, lang_code, zip_up, ds, outdir):
 						f.write(r.content)
 				else:
 					errored = True
-					print("\n Skipping download of page {} - error {}.".format(pagenum, r.status_code))
-			time.sleep(0.2) # safely within limit of 5 requests per second
+					print("\n Skipping download of page {} - error {}.".format(
+						pagenum, r.status_code))
+			time.sleep(0.2) # within limit of 5 requests per second
 			# not reporting https://api.mangadex.network/report telemetry for now, sorry
 
 		if zip_up:
-			zip_name = os.path.join(os.getcwd(), outdir, title, "{} {} [{}]".format(title, chapnum, groupname)) + ".cbz"
-			chap_folder = os.path.join(os.getcwd(), outdir, title, "{} [{}]".format(chapnum, groupname))
+			zip_name = os.path.join(os.getcwd(), outdir, title,
+					"{} {} [{}].cbz".format(title, chapnum, groupname))
+			chap_folder = os.path.join(os.getcwd(), outdir, title,
+					"{} [{}]".format(chapnum, groupname))
 			with zipfile.ZipFile(zip_name, 'w') as myzip:
 				for root, dirs, files in os.walk(chap_folder):
 					for file in files:
@@ -263,13 +289,17 @@ if __name__ == "__main__":
 	print("mangadex-dl v{}".format(A_VERSION))
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument("-l", dest="lang", required=False, action="store",
-			help="download in specified language code (default: en)", default="en")
-	parser.add_argument("-d", dest="datasaver", required=False, action="store_true",
+	parser.add_argument("-l", dest="lang", required=False,
+			action="store", default="en",
+			help="download in specified language code (default: en)")
+	parser.add_argument("-d", dest="datasaver", required=False,
+			action="store_true",
 			help="download images in lower quality")
-	parser.add_argument("-a", dest="cbz", required=False, action="store_true",
+	parser.add_argument("-a", dest="cbz", required=False,
+			action="store_true",
 			help="package chapters into .cbz format")
-	parser.add_argument("-o", dest="outdir", required=False, action="store", default="download",
+	parser.add_argument("-o", dest="outdir", required=False,
+			action="store", default="download",
 			help="specify name of output directory")
 	args = parser.parse_args()
 
