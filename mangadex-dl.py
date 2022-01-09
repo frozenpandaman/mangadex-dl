@@ -195,17 +195,18 @@ def dl(manga_id, lang_code, zip_up, ds, outdir):
 
 		r = requests.get("https://api.mangadex.org/at-home/server/{}"
 				.format(chapter["id"]))
-		baseurl = r.json()["baseUrl"]
+		chapter_data = r.json()
+		baseurl = chapter_data["baseUrl"]
 
 		# make url list
 		images = []
 		accesstoken = ""
-		chaphash = chapter["attributes"]["hash"]
+		chaphash = chapter_data["chapter"]["hash"]
 		datamode = "dataSaver" if ds else "data"
 		datamode2 = "data-saver" if ds else "data"
 		errored = False
 
-		for page_filename in chapter["attributes"][datamode]:
+		for page_filename in chapter_data["chapter"][datamode]:
 			images.append("{}/{}/{}/{}".format(
 				baseurl, datamode2, chaphash, page_filename))
 
