@@ -17,7 +17,7 @@
 
 import requests, time, os, sys, re, json, html, zipfile, argparse, shutil
 
-A_VERSION = "0.6"
+A_VERSION = "0.7"
 
 def pad_filename(str):
 	digits = re.compile('(\\d+)')
