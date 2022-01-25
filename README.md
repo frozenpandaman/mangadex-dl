@@ -11,7 +11,7 @@ A Python script to download manga from [MangaDex.org](https://mangadex.org/).
 $ git clone https://github.com/frozenpandaman/mangadex-dl
 $ pip install requests
 $ cd mangadex-dl/
-$ python mangadex-dl.py [-l language_code] [-d] [-a] [-o dl_dir]
+$ python mangadex-dl.py [-l language_code] [-d] [-a] [-o dl_dir] [-p]
 ```
 
 You can also execute the script via `./mangadex-dl.py` on macOS and Linux. On Windows, use a backslash.
@@ -22,6 +22,7 @@ You can also execute the script via `./mangadex-dl.py` on macOS and Linux. On Wi
 * `-d`: Download page images in lower quality (higher JPG compression/"data saver").
 * `-a`: Package downloaded chapters into .cbz ([comic book archive](https://en.wikipedia.org/wiki/Comic_book_archive)) files.
 * `-o`: Use a custom output directory name to save downloaded chapters. Defaults to "download".
+* `-p`: Disables PDF creation
 
 ### Example usage
 ```
