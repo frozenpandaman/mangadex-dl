@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import requests, time, os, sys, re, json, html, zipfile, argparse, shutil
+import requests, time, os, sys, re, json, html, zipfile, argparse, shutil, PIL.Image
 
 A_VERSION = "0.7"
 
@@ -93,7 +93,7 @@ def uniquify(title, chapnum, groupname, basedir):
 		counter += 1
 	return dest_folder
 
-def dl(manga_id, lang_code, zip_up, ds, outdir):
+def dl(manga_id, lang_code, zip_up, ds, outdir, make_pdf):
 	uuid = manga_id
 
 	if manga_id.isnumeric():
@@ -283,6 +283,19 @@ def dl(manga_id, lang_code, zip_up, ds, outdir):
 				print("\033[F\033[J", end='', flush=True) 
 			else:
 				print("\r\033[K", end='', flush=True)
+
+	# Creates a pdf named (Chapter.pdf) in dest_folder
+	if make_pdf:
+		with os.scandir(dest_folder) as entries:
+			img_list = []
+			pdf_location = f"{dest_folder}/Chapter.pdf"
+			for entry in entries:
+				image_location = os.path.join(dest_folder, entry.name)
+				img = PIL.Image.open(image_location)
+				img.load()
+				img_list.append(img)
+			img_list[0].save(fp=pdf_location, format="PDF", save_all=True,
+							 append_images=img_list[1:])
 	print("Done.")
 
 
@@ -302,6 +315,8 @@ if __name__ == "__main__":
 	parser.add_argument("-o", dest="outdir", required=False,
 			action="store", default="download",
 			help="specify name of output directory")
+	parser.add_argument("-p", dest="create_pdf", required=False, action="store_false",
+						help="Disables PDF creation")
 	args = parser.parse_args()
 
 	lang_code = "en" if args.lang is None else str(args.lang)
@@ -318,4 +333,4 @@ if __name__ == "__main__":
 		print("Error with URL.")
 		exit(1)
 
-	dl(manga_id, lang_code, args.cbz, args.datasaver, args.outdir)
+	dl(manga_id, lang_code, args.cbz, args.datasaver, args.outdir, args.create_pdf)
