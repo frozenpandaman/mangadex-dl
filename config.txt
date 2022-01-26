@@ -1,0 +1,9 @@
+# Delete the "#" at the beggining and add your values
+# WARNING THIS WILL OVERRIDE YOUR FLAGS
+# language = "en"
+# datasaver = True
+# cbz = True
+# pdf = True
+# remove = True
+# skip = True
+# outdir = ""

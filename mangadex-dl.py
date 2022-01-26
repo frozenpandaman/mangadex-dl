@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import requests, time, os, sys, re, json, html, zipfile, argparse, shutil, PIL.Image
+import requests, time, os, sys, re, json, html, zipfile, configargparse, shutil, PIL.Image
 
 A_VERSION = "0.7"
 
@@ -93,7 +93,7 @@ def uniquify(title, chapnum, groupname, basedir):
 		counter += 1
 	return dest_folder
 
-def dl(manga_id, lang_code, zip_up, ds, outdir, make_pdf):
+def dl(manga_id, lang_code, zip_up, ds, outdir, make_pdf, remove_dir, skip_files):
 	uuid = manga_id
 
 	if manga_id.isnumeric():
@@ -231,8 +231,18 @@ def dl(manga_id, lang_code, zip_up, ds, outdir, make_pdf):
 		else:
 			chapnum = 'c' + zpad(chapter["attributes"]["chapter"])
 
-		dest_folder = uniquify(title, chapnum, groupname, outdir)
-		if not os.path.exists(dest_folder):
+		dest_folder = os.path.join(os.getcwd(), outdir, title,
+								   "{} [{}]".format(chapnum, groupname))
+		if not skip_files:
+			dest_folder = uniquify(title, chapnum, groupname, outdir)
+		# Creates the path for all images format
+		format_file_name = os.path.join(os.getcwd(), outdir, title,
+										"{} {} [{}].".format(title, chapnum, groupname))
+		zip_in_root = format_file_name + "cbz"
+		pdf_in_root = format_file_name + "pdf"
+		is_file_in_root = True if os.path.exists(zip_in_root) or os.path.exists(pdf_in_root) \
+			else False
+		if not os.path.exists(dest_folder) and not is_file_in_root:
 			os.makedirs(dest_folder)
 
 		# download images
@@ -242,7 +252,10 @@ def dl(manga_id, lang_code, zip_up, ds, outdir, make_pdf):
 
 			dest_filename = pad_filename("{}{}".format(pagenum, ext))
 			outfile = os.path.join(dest_folder, dest_filename)
-
+			if is_file_in_root:
+				break
+			if os.path.exists(outfile):
+				continue
 			r = requests.get(url)
 			# go back to the beginning and erase the line before printing more
 			print("\r\033[K{} Downloading pages [{}/{}]".format(
@@ -266,60 +279,70 @@ def dl(manga_id, lang_code, zip_up, ds, outdir, make_pdf):
 			time.sleep(0.2) # within limit of 5 requests per second
 			# not reporting https://api.mangadex.network/report telemetry for now, sorry
 
-		if zip_up:
-			zip_name = os.path.join(os.getcwd(), outdir, title,
-					"{} {} [{}].cbz".format(title, chapnum, groupname))
+		if not remove_dir:
+			format_file_name = dest_folder + "/" + "{} {} [{}].".format(title, chapnum, groupname)
+		zip_path = format_file_name + "cbz"
+		if zip_up and not is_file_in_root:
 			chap_folder = os.path.join(os.getcwd(), outdir, title,
-					"{} [{}]".format(chapnum, groupname))
-			with zipfile.ZipFile(zip_name, 'w') as myzip:
+							"{} [{}]".format(chapnum, groupname))
+			with zipfile.ZipFile(zip_path, 'w') as myzip:
 				for root, dirs, files in os.walk(chap_folder):
 					for file in files:
-						path = os.path.join(root, file)
-						myzip.write(path, os.path.basename(path))
-			shutil.rmtree(chap_folder) # remove original folder of loose images
+						if str(file).lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.webp')):
+							path = os.path.join(root, file)
+							myzip.write(path, os.path.basename(path))
 		if not errored:
 			if len(requested_chapters) != index+1:
 				# go back to chapter line and clear it and everything under it
-				print("\033[F\033[J", end='', flush=True) 
+				print("\033[F\033[J", end='', flush=True)
 			else:
 				print("\r\033[K", end='', flush=True)
 
-	# Creates a pdf named (Chapter.pdf) in dest_folder
-	if make_pdf:
-		with os.scandir(dest_folder) as entries:
-			img_list = []
-			pdf_location = f"{dest_folder}/Chapter.pdf"
-			for entry in entries:
-				image_location = os.path.join(dest_folder, entry.name)
-				img = PIL.Image.open(image_location)
-				img.load()
-				img_list.append(img)
-			img_list[0].save(fp=pdf_location, format="PDF", save_all=True,
-							 append_images=img_list[1:])
+		pdf_path = format_file_name + "pdf"
+		if make_pdf and not is_file_in_root:
+			with os.scandir(dest_folder) as entries:
+				img_list = []
+				for entry in entries:
+					if str(entry.name).lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.webp')):
+						image_location = os.path.join(dest_folder, entry.name)
+						img = PIL.Image.open(image_location)
+						img.load()
+						img_list.append(img)
+				img_list[0].save(fp=pdf_path, format="PDF", save_all=True,
+								 append_images=img_list[1:])
+		if remove_dir and os.path.exists(dest_folder):
+			shutil.rmtree(dest_folder)  # remove original folder of loose images
 	print("Done.")
 
 
 if __name__ == "__main__":
 	print("mangadex-dl v{}".format(A_VERSION))
 
-	parser = argparse.ArgumentParser()
-	parser.add_argument("-l", dest="lang", required=False,
-			action="store", default="en",
-			help="download in specified language code (default: en)")
-	parser.add_argument("-d", dest="datasaver", required=False,
+	parser = configargparse.ArgParser(default_config_files=['config.txt'])
+	parser.add_argument("-l", "--language", dest="lang", required=False,
+			action="store", default="en", metavar="lang_code",
+			help="Download in specified language code (default: en)")
+	parser.add_argument("-d", "--datasaver", dest="datasaver", required=False,
 			action="store_true",
-			help="download images in lower quality")
-	parser.add_argument("-a", dest="cbz", required=False,
+			help="Download images in lower quality")
+	parser.add_argument("-a", "--cbz", dest="cbz", required=False,
 			action="store_true",
-			help="package chapters into .cbz format")
-	parser.add_argument("-o", dest="outdir", required=False,
-			action="store", default="download",
-			help="specify name of output directory")
-	parser.add_argument("-p", dest="create_pdf", required=False, action="store_false",
-						help="Disables PDF creation")
+			help="Package chapters into .cbz format")
+	parser.add_argument("-o", "--outdir", dest="outdir", required=False,
+			action="store", default="download", metavar="dl-dir",
+			help="Specify name of output directory")
+	parser.add_argument("-p", "--pdf", dest="create_pdf", required=False, action="store_true",
+			help="Package chapter into .pdf format")
+	parser.add_argument("-r", "--remove", dest="remove_dir", required=False, action="store_true",
+			help="Removes the downloaded chapters directory only if '-p' or '-a' flag exists")
+	parser.add_argument("-s", "--skip", dest="skip_files", required=False, action="store_true",
+			help="Skip the chapter if it's already downloaded")
 	args = parser.parse_args()
 
 	lang_code = "en" if args.lang is None else str(args.lang)
+	# Prevents people from spamming the servers with useless requests
+	if not args.create_pdf and not args.cbz:
+		args.remove_dir = False
 
 	# prompt for manga
 	url = ""
@@ -333,4 +356,5 @@ if __name__ == "__main__":
 		print("Error with URL.")
 		exit(1)
 
-	dl(manga_id, lang_code, args.cbz, args.datasaver, args.outdir, args.create_pdf)
+	dl(manga_id, lang_code, args.cbz, args.datasaver, args.outdir, args.create_pdf,
+	   args.remove_dir, args.skip_files)

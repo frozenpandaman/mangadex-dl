@@ -9,9 +9,9 @@ A Python script to download manga from [MangaDex.org](https://mangadex.org/).
 ## Installation & usage
 ```
 $ git clone https://github.com/frozenpandaman/mangadex-dl
-$ pip install requests
+$ pip install -r requirements.txt
 $ cd mangadex-dl/
-$ python mangadex-dl.py [-l language_code] [-d] [-a] [-o dl_dir] [-p]
+$ python mangadex-dl.py [-l language_code] [-d] [-a] [-o dl_dir] [-p] [-r]
 ```
 
 You can also execute the script via `./mangadex-dl.py` on macOS and Linux. On Windows, use a backslash.
@@ -20,9 +20,11 @@ You can also execute the script via `./mangadex-dl.py` on macOS and Linux. On Wi
 
 * `-l`: Download releases in a language other than English. For a list of language codes, see the [wiki page](https://github.com/frozenpandaman/mangadex-dl/wiki/language-codes).
 * `-d`: Download page images in lower quality (higher JPG compression/"data saver").
-* `-a`: Package downloaded chapters into .cbz ([comic book archive](https://en.wikipedia.org/wiki/Comic_book_archive)) files.
+* `-a`: Makes a copy of the downloaded chapter in a .cbz ([comic book archive](https://en.wikipedia.org/wiki/Comic_book_archive)) file.
 * `-o`: Use a custom output directory name to save downloaded chapters. Defaults to "download".
-* `-p`: Disables PDF creation
+* `-p`: Makes a copy of the downloaded chapter in a .pdf file
+* `-r`: Deletes the downloaded chapter directory, leaving the created pdf/cbz files in place (only works if the `-p` and/or `-a` flag is also used).
+* `-s`: Skip the chapter if it is already downloaded (if it is partially downloaded it will continue from where it left off).
 
 ### Example usage
 ```
@@ -47,6 +49,20 @@ Downloading chapter 1...
 ... (and so on)
 ```
 
+###Config file
+* You can use the `config.txt` file to select the flags and, therefore, it is not necessary to put them in the command line.
+* The settings on the config.txt will overwrite your flags written on the command line so take that in count.
+* Config.txt doesn't read the command if at the begging has a `#`. And doesn't care about spaces.
+###Config file Example
+```
+language = "es" 
+datasaver = False
+cbz = True
+pdf = True
+remove = False
+skip = True
+outdir = "mycool/directory/foo/bar"
+```
 ### Current limitations
  * The script will download all available releases (in your language) of each chapter specified.
 
