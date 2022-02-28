@@ -4,14 +4,13 @@ A Python script to download manga from [MangaDex.org](https://mangadex.org/).
 
 ## Requirements
   * [Python 3.4+](https://www.python.org/downloads/) (or [install via Homebrew](https://docs.python-guide.org/starting/install3/osx/) on macOS)
-  * Python's [Requests](https://docs.python-requests.org/en/latest/) library
 
 ## Installation & usage
 ```
 $ git clone https://github.com/frozenpandaman/mangadex-dl
 $ pip install requests
 $ cd mangadex-dl/
-$ python mangadex-dl.py [-l language_code] [-d] [-a] [-o dl_dir]
+$ python mangadex-dl.py [-l language_code] [-o dl_dir] [-s] [-a manga|vol|chap] [-r all|one] [-d range] <manga_url>
 ```
 
 You can also execute the script via `./mangadex-dl.py` on macOS and Linux. On Windows, use a backslash.
@@ -19,35 +18,77 @@ You can also execute the script via `./mangadex-dl.py` on macOS and Linux. On Wi
 ### Optional flags
 
 * `-l`: Download releases in a language other than English. For a list of language codes, see the [wiki page](https://github.com/frozenpandaman/mangadex-dl/wiki/language-codes).
-* `-d`: Download page images in lower quality (higher JPG compression/"data saver").
-* `-a`: Package downloaded chapters into .cbz ([comic book archive](https://en.wikipedia.org/wiki/Comic_book_archive)) files.
-* `-o`: Use a custom output directory name to save downloaded chapters. Defaults to "download".
+* `-o`: Use a custom output directory name to save downloaded chapters. Defaults to current directory.
+* `-s`: Download page images in lower quality (higher JPG compression/"data saver").
+* `-a`: Package downloaded chapters into .zip files. Values: `manga` (zip all manga), `vol` (zip all volumes separately), `chap` (zip all chapters)
+* `-k`: Keep original files after archiving
+* `-r`: Remove duplicate chapters from list. Values: `all` (return list as is), `one` (delete from list all duplicates)
+* `-d`: Setup download range. Used for non-interactive program execution.
+
+### How can I download a chapter from a specific scanlate group?
+
+If duplicate chapters are found in the list of chapters, you will be prompted to choose: download all available chapters; download only one copy; specify group priorities. Set the desired group to the highest priority and only the chapter from this group will be downloaded.
+
+### Download range format
+
+Here are some examples of valid downloading range input:
+
+* `v1`: Download all volume 1;
+* `v1(3)`: Download chapter 3 from volume 1;
+* `v1-v5`: Download volumes 1-5;
+* `v1(3)-v5`: Download from chapter 3 to volume 5;
+* `v1(3)-v5(66)`: Download from chapter 3 to chapter 66;
+* `v1,v4-v5,v8(99)`: Can be combined with a comma;
+* `vu`: Some chapters do not have a volume. Therefore, they appear in vu (Volume Unknown);
+* `v0(Oneshot)`: Download oneshot;
+* `all`: Download whole manga.
+
+Also some examples of INVALID input:
+
+* `1,2,3`: Obsolete format;
+* `v1(1,2,3-6)`: You cannot specify more than one chapter, use the example above;
 
 ### Example usage
 ```
-$ ./mangadex-dl.py
-mangadex-dl v0.6
-Enter manga URL: https://mangadex.org/title/58be6aa6-06cb-4ca5-bd20-f1392ce451fb/yotsuba-to
+$ ./mangadex-dl.py -r one
+mangadex-dl v0.7
 
-Title: Yotsuba to!
-Available chapters:
- 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
- 23, 24, 25, 26, 27, 27.5, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
- 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 54.2, 55, 56, 57, 58,
- 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 69.2, 70, 71, 72, 73, 74, 75, 76,
- 77, 78, 79, 79.2, 80, 81, 81.2, 81.3, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91,
- 92, 93, 94, 95, 96, 97, 98, 99, 100, 100, 100, 101, 102, 103, 104, 105
+Enter manga URL or ID. (leave blank to complete)
+> https://mangadex.org/title/58be6aa6-06cb-4ca5-bd20-f1392ce451fb/yotsuba-to
+Enter manga URL or ID. (leave blank to complete)
+>
+Receiving manga's title...
 
-Enter chapter(s) to download: 1, 4-7
+TITLE: Yotsuba to!
 
-Downloading chapter 1...
- Downloaded page 1.
- Downloaded page 2.
-... (and so on)
+Receiving chapters info...
+Receiving chapters list...
+
+Available chapters: (total 116)
+Volume 1 :      1     2     3     4     5     6     7
+Volume 2 :      8     9    10    11    12    13    14
+Volume 3 :     15    16    17    18    19    20    21
+Volume 4 :     22    23    24    25    26    27  27.5
+Volume 5 :     28    29    30    31    32    33    34
+Volume 6 :     35    36    37    38    39    40    41
+Volume 7 :     42    43    44    45    46    47    48
+Volume 8 :     49    50    51    52    53    54  54.2    55
+Volume 9 :     56    57    58    59    60    61    62
+Volume 10:     63    64    65    66    67    68    69  69.2
+Volume 11:     70    71    72    73    74    75    76
+Volume 12:     77    78    79  79.2    80    81  81.2  81.3    82
+Volume 13:     83    84    85    86    87    88    89    90
+Volume 14:     91    92    93    94    95    96    97
+Volume 15:     98    99   100 100.2   101 101.2   102 102.2   103   104 104.2
+Volume Unknown:    105   106
+
+Enter chapter(s) to download: 
+(see README for examples of valid format)
+> v3-v5
+Downloading chapter [  1/ 21] Ch.15 Yotsuba & Souvenirs...
+  Downloading image [  1/ 18]...
+...and so
 ```
-
-### Current limitations
- * The script will download all available releases (in your language) of each chapter specified.
 
 ## License
 
