@@ -289,6 +289,7 @@ def download_chapters(requested_chapters, directory_name, is_datasaver):
 		
 		directory_chapter = os.path.join(directory_name, "Volume {}".format(chapter_volume), "Chapter {}".format(chapter_number))
 		if os.path.exists(directory_chapter):
+			# name folders like "Chapter 1 (2)"
 			for i in range(1, 10):
 				directory_chapter = "{} ({})".format(directory_chapter, i)
 				if not os.path.exists(directory_chapter):
@@ -308,27 +309,29 @@ def download_chapters(requested_chapters, directory_name, is_datasaver):
 	print("\nChapters download completed successfully!")
 
 def archive_manga_directory(manga_directory, out_directory, archive_mode, is_keep):
+
+	def archive_directory(directory, archive_format, is_keep):
+		if os.path.isdir(directory):
+			# archive only directories
+			shutil.make_archive(directory, archive_format, directory)
+			if not is_keep:
+				shutil.rmtree(directory)
+	
 	print("\nArchive downloaded chapters...")
 	archive_format = "zip"
 	
 	if archive_mode == "manga":
 		# archive whole manga directory
-		shutil.make_archive(manga_directory, archive_format, manga_directory)
-		if not is_keep:
-			shutil.rmtree(manga_directory)
+		archive_directory(manga_directory, archive_format, is_keep)
 	else:
 		for volume_dir in os.listdir(manga_directory):
 			volume_dir_path = os.path.join(manga_directory, volume_dir)
 			if archive_mode == "vol":
 				# archive volume directories
-				shutil.make_archive(volume_dir_path, archive_format, volume_dir_path)
-				if not is_keep:
-					shutil.rmtree(volume_dir_path)
+				archive_directory(volume_dir_path, archive_format, is_keep)
 			elif archive_mode == "chap":
 				# archive chapter directories
 				for chapter_dir in os.listdir(volume_dir_path):
 					chapter_dir_path = os.path.join(manga_directory, volume_dir, chapter_dir)
-					shutil.make_archive(chapter_dir_path, archive_format, chapter_dir_path)
-					if not is_keep:
-						shutil.rmtree(chapter_dir_path)
+					archive_directory(chapter_dir_path, archive_format, is_keep)
 	print("Archiving completed")

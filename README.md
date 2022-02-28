@@ -46,7 +46,7 @@ Here are some examples of valid downloading range input:
 Also some examples of INVALID input:
 
 * `1,2,3`: Obsolete format;
-* `v1(1,2,3-6)`: You cannot specify more than one chapter, use the example above;
+* `v1(1,2,3-6)`: You cannot specify more than one chapter, use the example above.
 
 ### Example usage
 ```
