@@ -24,7 +24,7 @@ def dl(manga_url, args):
 	manga_uuid = get_uuid(manga_url)
 	manga_title, manga_title_en = get_title(manga_uuid, args.language)
 	
-	print("\nTITLE: {}\n".format(manga_title))
+	print("\n[{:2}/{:2}] TITLE: {}\n".format(args.manga_urls.index(manga_url)+1, len(args.manga_urls), manga_title))
 	
 	# check available chapters
 	chapters_info = get_chapters_info(manga_uuid, args.language)

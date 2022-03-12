@@ -1,9 +1,9 @@
-import urllib.request, urllib.error, os, time, re, json, shutil
+import urllib.request, urllib.error, os, time, re, json, shutil, zipfile
 
 def url_request(url):
-	# lets try twice
+	# lets try thrice
 	error = None
-	for i in range(0,2):
+	for i in range(0,3):
 		try:
 			time.sleep(0.2) # within limit of 5 requests per second
 			response = urllib.request.urlopen(url).read()
@@ -25,7 +25,7 @@ def get_uuid(manga_url):
 		raise ValueError("Cannot retrieve manga UUID")
 
 def get_title(manga_uuid, language):
-	print("Receiving manga's title...")
+	print("\nReceiving manga's title...")
 	response = get_json("https://api.mangadex.org/manga/{}".format(manga_uuid))
 	
 	title_en = response["data"]["attributes"]["title"]["en"]
@@ -281,7 +281,7 @@ def download_chapters(requested_chapters, directory_name, is_datasaver):
 		chapter_name = chapter["attributes"]["title"] if chapter["attributes"]["title"] != None else ""
 		chapter_volume = chapter["attributes"]["volume"] if chapter["attributes"]["volume"] != None else "Unknown"
 		
-		print("\nDownloading chapter [{:3}/{:3}] Ch.{} {}...".format(chapter_count, chapter_count_max, chapter_number, chapter_name))
+		print("\nDownloading chapter [{:3}/{:3}] Ch.{} {}".format(chapter_count, chapter_count_max, chapter_number, chapter_name))
 		chapter_json = get_json("https://api.mangadex.org/at-home/server/{}".format(chapter["id"]))
 		
 		baseUrl = "{}/{}/{}/".format(chapter_json["baseUrl"], "data-saver" if is_datasaver else "data", chapter_json["chapter"]["hash"])
@@ -313,12 +313,18 @@ def archive_manga_directory(manga_directory, out_directory, archive_mode, is_kee
 	def archive_directory(directory, archive_format, is_keep):
 		if os.path.isdir(directory):
 			# archive only directories
-			shutil.make_archive(directory, archive_format, directory)
+			zip_name = "{}.{}".format(directory, archive_format)
+			with zipfile.ZipFile(zip_name, mode="w", compression=zipfile.ZIP_STORED, allowZip64=True) as zip_file:
+				for root, dirs, files in os.walk(directory):
+					for file in files:
+						filename = os.path.join(root, file)
+						arcname = os.path.relpath(os.path.join(root, file), directory)
+						zip_file.write(filename, arcname)
 			if not is_keep:
 				shutil.rmtree(directory)
 	
 	print("\nArchive downloaded chapters...")
-	archive_format = "zip"
+	archive_format = "zip" # you can change that to cbz
 	
 	if archive_mode == "manga":
 		# archive whole manga directory
@@ -331,7 +337,9 @@ def archive_manga_directory(manga_directory, out_directory, archive_mode, is_kee
 				archive_directory(volume_dir_path, archive_format, is_keep)
 			elif archive_mode == "chap":
 				# archive chapter directories
-				for chapter_dir in os.listdir(volume_dir_path):
-					chapter_dir_path = os.path.join(manga_directory, volume_dir, chapter_dir)
-					archive_directory(chapter_dir_path, archive_format, is_keep)
+				# if no archives have been created yet
+				if os.path.isdir(volume_dir_path):
+					for chapter_dir in os.listdir(volume_dir_path):
+						chapter_dir_path = os.path.join(manga_directory, volume_dir, chapter_dir)
+						archive_directory(chapter_dir_path, archive_format, is_keep)
 	print("Archiving completed")
