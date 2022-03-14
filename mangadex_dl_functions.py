@@ -1,4 +1,4 @@
-import urllib.request, urllib.error, os, time, re, json, shutil, zipfile
+import urllib.request, os, time, re, json, shutil, zipfile
 
 def url_request(url):
 	# lets try thrice
@@ -8,7 +8,7 @@ def url_request(url):
 			time.sleep(0.2) # within limit of 5 requests per second
 			response = urllib.request.urlopen(url).read()
 			return response
-		except urllib.error.URLError as err:
+		except Exception as err:
 			error = err
 			time.sleep(2)
 	raise error
