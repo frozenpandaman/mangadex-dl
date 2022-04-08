@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2019-2021 eli fessler
+# Copyright (C) 2019-2021 eli fessler
+# Copyright (C) 2022 Uwuewsky
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +19,7 @@
 import argparse, os
 from mangadex_dl_functions import *
 
-MANGADEX_DL_VERSION = "0.7"
+MANGADEX_DL_VERSION = "1.0"
 
 def dl(manga_url, args):
 	manga_uuid = get_uuid(manga_url)

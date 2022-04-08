@@ -1,9 +1,25 @@
+# Copyright (c) 2019-2021 eli fessler
+# Copyright (C) 2022 Uwuewsky
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+
 import urllib.request, os, time, re, json, shutil, zipfile
 
 def url_request(url):
-	# lets try thrice
+	# let's try five times
 	error = None
-	for i in range(0,3):
+	for i in range(0,5):
 		try:
 			time.sleep(0.2) # within limit of 5 requests per second
 			response = urllib.request.urlopen(url).read()
@@ -88,8 +104,6 @@ def get_duplicated_chapters(chapters_list):
 	
 	check_list = chapters_list.copy()
 	for chapter_i in check_list:
-		if chapter_i["attributes"]["chapter"] == None:
-			continue
 		duplicates_list = []
 		for chapter_j in check_list:
 			if chapter_i["id"] == chapter_j["id"]:
@@ -169,7 +183,7 @@ def parse_range(range_input):
 	requested_list = []
 	# Sample object: 
 	# sample = {"start": {"volume": 2, "chapter": 5}, | v2(5)-v6(9)
-	#	   "end": {"volume": 6, "chapter": 9}     |
+	#             "end": {"volume": 6, "chapter": 9}  |
 	
 	# print("\nInput: ", range_input)
 	
@@ -306,7 +320,7 @@ def download_chapters(requested_chapters, directory_name, is_datasaver):
 				file_image.write(url_request("{}{}".format(baseUrl, image_url)))
 			image_count += 1
 		chapter_count += 1
-	print("\nChapters download completed successfully!")
+	print("\nChapters download completed successfully")
 
 def archive_manga_directory(manga_directory, out_directory, archive_mode, is_keep):
 
