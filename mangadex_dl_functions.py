@@ -22,7 +22,7 @@ def url_request(url):
 	for i in range(0,5):
 		try:
 			time.sleep(0.2) # within limit of 5 requests per second
-			response = urllib.request.urlopen(url).read()
+			response = urllib.request.urlopen(url, timeout=30).read()
 			return response
 		except Exception as err:
 			error = err
@@ -357,3 +357,64 @@ def archive_manga_directory(manga_directory, out_directory, archive_mode, is_kee
 						chapter_dir_path = os.path.join(manga_directory, volume_dir, chapter_dir)
 						archive_directory(chapter_dir_path, archive_format, is_keep)
 	print("Archiving completed")
+
+def dl(manga_url, args):
+	manga_uuid = get_uuid(manga_url)
+	manga_title, manga_title_en = get_title(manga_uuid, args.language)
+	
+	print("\n[{:2}/{:2}] TITLE: {}\n".format(args.manga_urls.index(manga_url)+1, len(args.manga_urls), manga_title))
+	
+	# check available chapters
+	chapters_info = get_chapters_info(manga_uuid, args.language)
+	
+	if chapters_info["total"] == 0:
+		raise ValueError("No chapters available to download!")
+	
+	chapters_list = get_chapters_list(manga_uuid, chapters_info["total"], args.language)
+	
+	# duplicate check
+	if args.resolve != "all":
+		duplicated_chapters_list = get_duplicated_chapters(chapters_list)
+		if len(duplicated_chapters_list) != 0:
+			chapters_list = resolve_duplicated_chapters(chapters_list, duplicated_chapters_list, args.resolve)
+	
+	# print chapters list
+	print_available_chapters(chapters_list)
+	
+	# i/o for chapters to download
+	if args.download == None:
+		dl_input = input("\nEnter chapter(s) to download:"\
+				 "\n(see README for examples of valid format)"\
+				 "\n> ")
+	else:
+		dl_input = args.download
+	
+	dl_list = parse_range(dl_input)
+	
+	# requested chapters list in dl_range
+	requested_chapters = get_requested_chapters(chapters_list, dl_list)
+	if len(requested_chapters) == 0:
+		raise ValueError("Empty list of chapters. Make sure you enter the correct download range!")
+	
+	# download images
+	if os.path.isdir(args.outdir):
+		out_directory = args.outdir
+	else:
+		out_directory = "."
+	
+	manga_directory = os.path.join(out_directory, manga_title_en)
+	if not os.path.exists(manga_directory):
+		try:
+			os.makedirs(manga_directory)
+		except OSError:
+			manga_directory = os.path.join(out_directory, "Manga {}".format(manga_uuid))
+			if not os.path.exists(manga_directory):
+				os.makedirs(manga_directory)
+	
+	download_chapters(requested_chapters, manga_directory, args.datasaver)
+	
+	# archive
+	if args.archive != None:
+		archive_manga_directory(manga_directory, out_directory, args.archive, args.keep)
+	
+	print("\nManga \"{}\" was successfully downloaded".format(manga_title))

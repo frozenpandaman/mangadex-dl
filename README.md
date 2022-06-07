@@ -8,7 +8,7 @@ A Python script to download manga from [MangaDex.org](https://mangadex.org/).
 ```
 $ git clone https://github.com/Uwuewsky/mangadex-dl
 $ cd mangadex-dl/
-$ python mangadex-dl.py [-l language_code] [-o dl_dir] [-s] [-a manga|vol|chap] [-r all|one] [-d range] [manga_urls]
+$ python mangadex-dl.py [-l language_code] [-o directory] [-s] [-a manga|vol|chap] [-r all|one] [-d range] [manga_urls]
 ```
 You can also execute the script via `./mangadex-dl.py` on macOS and Linux. On Windows, use a backslash.
 
