@@ -19,7 +19,7 @@
 import argparse
 from mangadex_dl_functions import *
 
-MANGADEX_DL_VERSION = "1.0"
+MANGADEX_DL_VERSION = "1.1"
 
 def initialize():
 	help_str = "Examples of valid input for a range of downloadable chapters: "\

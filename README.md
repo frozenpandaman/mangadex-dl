@@ -46,20 +46,17 @@ Also some examples of INVALID input:
 ### Example usage
 ```
 $ ./mangadex-dl.py -a vol
-mangadex-dl v1.0
+mangadex-dl v1.1
 
 Enter manga URL or ID. (leave blank to complete)
 > https://mangadex.org/title/58be6aa6-06cb-4ca5-bd20-f1392ce451fb/yotsuba-to
 
 Enter manga URL or ID. (leave blank to complete)
->
+> 
 
-Receiving manga's title...
+Receiving manga's info...
 
-[ 1/ 1] TITLE: Yotsuba to!
-
-Receiving chapters info...
-Receiving chapters list...
+[ 1/ 1] TITLE: Yotsuba&!
 
 Specify what to do with duplicate chapters.
    all  - download all available chapters
@@ -67,7 +64,7 @@ Specify what to do with duplicate chapters.
 <other> - manually specify scanlate groups priority
 > one
 
-Available chapters: (total 116)
+Available chapters: (total 117)
 Volume 1 :      1     2     3     4     5     6     7
 Volume 2 :      8     9    10    11    12    13    14
 Volume 3 :     15    16    17    18    19    20    21
@@ -83,19 +80,20 @@ Volume 12:     77    78    79  79.2    80    81  81.2  81.3    82
 Volume 13:     83    84    85    86    87    88    89    90
 Volume 14:     91    92    93    94    95    96    97
 Volume 15:     98    99   100 100.2   101 101.2   102 102.2   103   104 104.2
-Volume Unknown:    105   106
+Volume Unknown:    105   106   107
 
 Enter chapter(s) to download:
 (see README for examples of valid format)
 > v3-v5
 
 Downloading chapter [  1/ 21] Ch.15 Yotsuba & Souvenirs
-  Downloading image [  2/ 18]...
+  Downloading image [ 18/ 18]...
   [Text omitted...]
 Chapters download completed successfully
 
 Archive downloaded chapters...
-Archiving completed
+  Archiving [  3/  3]...
+Archiving completed successfully
 
 Manga "Yotsuba to!" was successfully downloaded
 

@@ -14,15 +14,27 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import urllib.request, os, time, re, json, shutil, zipfile
+import urllib.request, os, time, re, json, shutil, zipfile, concurrent.futures
+from collections import deque
+
+class DownloadLimits:
+	last_requests = deque(maxlen=5)
+	
+	def check():
+		if len(DownloadLimits.last_requests) == 5:
+			# if less than second since last 5 requests
+			interval = time.time() - DownloadLimits.last_requests[0]
+			if interval < 1:
+				time.sleep(1 - interval)
+		DownloadLimits.last_requests.append(time.time())
 
 def url_request(url):
 	# let's try five times
 	error = None
 	for i in range(0,5):
 		try:
-			time.sleep(0.2) # within limit of 5 requests per second
-			response = urllib.request.urlopen(url, timeout=30).read()
+			DownloadLimits.check()
+			response = urllib.request.urlopen(url, timeout=60).read()
 			return response
 		except Exception as err:
 			error = err
@@ -41,7 +53,6 @@ def get_uuid(manga_url):
 		raise ValueError("Cannot retrieve manga UUID")
 
 def get_title(manga_uuid, language):
-	print("\nReceiving manga's title...")
 	response = get_json("https://api.mangadex.org/manga/{}".format(manga_uuid))
 	
 	title_en = response["data"]["attributes"]["title"]["en"]
@@ -56,7 +67,6 @@ def get_title(manga_uuid, language):
 	return title, title_en
 
 def get_chapters_info(manga_uuid, language):
-	print("Receiving chapters info...")
 	return get_json("https://api.mangadex.org/manga/{}/feed"\
 			"?limit=0&translatedLanguage[]={}"\
 			"&contentRating[]=safe"\
@@ -66,7 +76,6 @@ def get_chapters_info(manga_uuid, language):
 			.format(manga_uuid, language))
 
 def get_chapters_list(manga_uuid, total_chapters, language):
-	print("Receiving chapters list...")
 	chapters_list = []
 	offset = 0
 	while offset < total_chapters: # if more than 500 chapters!
@@ -86,7 +95,7 @@ def get_scanlation_group_info(group_id):
 	return get_json("https://api.mangadex.org/group/{}".format(group_id))["data"]
 
 def print_available_chapters(chapters_list):
-	print("\nAvailable chapters: (total {})".format(len(chapters_list)), end="")
+	print("Available chapters: (total {})".format(len(chapters_list)), end="")
 	volume_number = None
 	for chapter in chapters_list:
 		chapter_volume = chapter["attributes"]["volume"] if chapter["attributes"]["volume"] != "" and chapter["attributes"]["volume"] != None else "Unknown"
@@ -122,11 +131,12 @@ def get_duplicated_chapters(chapters_list):
 
 def resolve_duplicated_chapters(chapters_list, duplicated_chapters_list, resolve):
 	if resolve == None:
-		resolve = input("\nSpecify what to do with duplicate chapters.\n"\
+		resolve = input("Specify what to do with duplicate chapters.\n"\
 				"   all  - download all available chapters\n"\
 				"   one  - download only one chapter\n"\
 				"<other> - manually specify scanlate groups priority\n"\
 				"> ")
+		print()
 	if resolve == "all":
 		return chapters_list
 	if resolve == "one":
@@ -145,7 +155,7 @@ def resolve_duplicated_chapters(chapters_list, duplicated_chapters_list, resolve
 			if relation["type"] == "scanlation_group":
 				return(relation["id"])
 	
-	print("Receiving scanlate groups info...")
+	print("Receiving scanlate groups info...\n")
 	scanlation_groups_id = set()
 	scanlation_groups = []
 	
@@ -162,7 +172,7 @@ def resolve_duplicated_chapters(chapters_list, duplicated_chapters_list, resolve
 	for group in scanlation_groups:
 		group_priority = input("Specify priority for {}. [1-5]\n> ".format(group["attributes"]["name"]))
 		group["attributes"]["priority"] = group_priority
-	print("Groups are prioritized")
+	print("Groups are prioritized\n")
 	scanlation_groups.sort(key=lambda x: x["attributes"]["priority"])
 	
 	for duplicated_chapters in duplicated_chapters_list:
@@ -183,23 +193,19 @@ def parse_range(range_input):
 	requested_list = []
 	# Sample object: 
 	# sample = {"start": {"volume": 2, "chapter": 5}, | v2(5)-v6(9)
-	#             "end": {"volume": 6, "chapter": 9}  |
-	
-	# print("\nInput: ", range_input)
+	#             "end": {"volume": 6, "chapter": 9}} |
 	
 	if range_input == "all":
 		return "all"
 	
 	# split the input into separate ranges
 	entry_input_list = range_input.split(",")
-	# print("Entry: ", entry_input_list)
 	
 	# define a start and end point for each range
 	for entry_input in entry_input_list:
 		range_object = {"start": {"volume": None, "chapter": None}, "end": {"volume": None, "chapter": None}}
 		
 		volume_input_list = entry_input.split("-")
-		# print("	 Start/End: ", volume_input_list)
 		
 		# compose a range object from points 
 		start = True
@@ -235,7 +241,6 @@ def parse_range(range_input):
 						range_object["end"]["chapter"] = chapter
 			
 			start = False
-			# print("	   Range obj: ", range_object)
 		requested_list.append(range_object)
 	
 	return requested_list
@@ -290,75 +295,92 @@ def get_requested_chapters(chapters_list, dl_list):
 def download_chapters(requested_chapters, directory_name, is_datasaver):
 	chapter_count = 1
 	chapter_count_max = len(requested_chapters)
+	
 	for chapter in requested_chapters:
 		chapter_number = chapter["attributes"]["chapter"] if chapter["attributes"]["chapter"] != None else "Oneshot"
 		chapter_name = chapter["attributes"]["title"] if chapter["attributes"]["title"] != None else ""
 		chapter_volume = chapter["attributes"]["volume"] if chapter["attributes"]["volume"] != None else "Unknown"
 		
 		print("\nDownloading chapter [{:3}/{:3}] Ch.{} {}".format(chapter_count, chapter_count_max, chapter_number, chapter_name))
-		chapter_json = get_json("https://api.mangadex.org/at-home/server/{}".format(chapter["id"]))
 		
-		baseUrl = "{}/{}/{}/".format(chapter_json["baseUrl"], "data-saver" if is_datasaver else "data", chapter_json["chapter"]["hash"])
+		chapter_json = get_json("https://api.mangadex.org/at-home/server/{}".format(chapter["id"]))
+		base_url = "{}/{}/{}/".format(chapter_json["baseUrl"], "data-saver" if is_datasaver else "data", chapter_json["chapter"]["hash"])
 		image_url_list = chapter_json["chapter"]["dataSaver"] if is_datasaver else chapter_json["chapter"]["data"]
 		
 		directory_chapter = os.path.join(directory_name, "Volume {}".format(chapter_volume), "Chapter {}".format(chapter_number))
 		if os.path.exists(directory_chapter):
 			# name folders like "Chapter 1 (2)"
 			for i in range(1, 10):
-				directory_chapter = "{} ({})".format(directory_chapter, i)
-				if not os.path.exists(directory_chapter):
+				temp_path = "{} ({})".format(directory_chapter, i)
+				if not os.path.exists(temp_path):
+					directory_chapter = temp_path
 					break
 		os.makedirs(directory_chapter)
-		
+
 		image_count = 1
+		image_count_downloaded = 1
 		image_count_max = len(image_url_list)
-		for image_url in image_url_list:
-			print("\r  Downloading image [{:3}/{:3}]...".format(image_count, image_count_max), end="")
-			file_path = os.path.join(directory_chapter, "{:03d}{}".format(image_count, os.path.splitext(image_url)[1]))
-			file_image = open(file_path, mode="wb")
-			with file_image:
-				file_image.write(url_request("{}{}".format(baseUrl, image_url)))
-			image_count += 1
+		future_list = []
+		with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+			for image_url in image_url_list:
+				future_list.append(executor.submit(download_image, base_url + image_url, image_count, directory_chapter))
+				image_count += 1
+			for future in concurrent.futures.as_completed(future_list):
+				print("\r  Downloaded images [{:3}/{:3}]...".format(image_count_downloaded, image_count_max), end="")
+				image_count_downloaded += 1
 		chapter_count += 1
 	print("\nChapters download completed successfully")
 
-def archive_manga_directory(manga_directory, out_directory, archive_mode, is_keep):
+def download_image(full_url, image_count, directory_chapter):
+	image_file_path = os.path.join(directory_chapter, "{:03d}{}".format(image_count, os.path.splitext(full_url)[1]))
+	image_file = open(image_file_path, mode="wb")
+	with image_file:
+		image_file.write(url_request(full_url))
 
-	def archive_directory(directory, archive_format, is_keep):
-		if os.path.isdir(directory):
-			# archive only directories
-			zip_name = "{}.{}".format(directory, archive_format)
-			with zipfile.ZipFile(zip_name, mode="w", compression=zipfile.ZIP_STORED, allowZip64=True) as zip_file:
-				for root, dirs, files in os.walk(directory):
-					for file in files:
-						filename = os.path.join(root, file)
-						arcname = os.path.relpath(os.path.join(root, file), directory)
-						zip_file.write(filename, arcname)
-			if not is_keep:
-				shutil.rmtree(directory)
-	
+def archive_manga_directory(manga_directory, archive_mode, is_keep):
 	print("\nArchive downloaded chapters...")
-	archive_format = "zip" # you can change that to cbz
+	
+	directory_list = []
 	
 	if archive_mode == "manga":
 		# archive whole manga directory
-		archive_directory(manga_directory, archive_format, is_keep)
+		directory_list.append(manga_directory)
+	elif archive_mode == "vol":
+		# archive volume directories
+		directory_list += map(lambda d: os.path.join(manga_directory, d), next(os.walk(manga_directory))[1])
 	else:
 		for volume_dir in os.listdir(manga_directory):
 			volume_dir_path = os.path.join(manga_directory, volume_dir)
-			if archive_mode == "vol":
-				# archive volume directories
-				archive_directory(volume_dir_path, archive_format, is_keep)
-			elif archive_mode == "chap":
+			if os.path.isdir(volume_dir_path):
 				# archive chapter directories
-				# if no archives have been created yet
-				if os.path.isdir(volume_dir_path):
-					for chapter_dir in os.listdir(volume_dir_path):
-						chapter_dir_path = os.path.join(manga_directory, volume_dir, chapter_dir)
-						archive_directory(chapter_dir_path, archive_format, is_keep)
-	print("Archiving completed")
+				directory_list += map(lambda d: os.path.join(volume_dir_path, d), next(os.walk(volume_dir_path))[1])
+
+	# skip directories that have already been archived before
+	directory_list = list(filter(lambda x: not os.path.exists(x + ".zip"), directory_list))
+	
+	directory_count_archived = 1
+	directory_count_max = len(directory_list)
+	for directory in directory_list:
+		archive_directory(directory, is_keep)
+		print("\r  Archiving [{:3}/{:3}]...".format(directory_count_archived, directory_count_max), end="")
+		directory_count_archived += 1
+	print("\nArchiving completed successfully")
+
+def archive_directory(directory, is_keep):
+	archive_format = "zip" # you can change that to cbz
+	zip_name = "{}.{}".format(directory, archive_format)
+	
+	with zipfile.ZipFile(zip_name, mode="w", compression=zipfile.ZIP_STORED, allowZip64=True) as zip_file:
+		for root, dirs, files in os.walk(directory):
+			for file in files:
+				filename = os.path.join(root, file)
+				arcname = os.path.relpath(os.path.join(root, file), directory)
+				zip_file.write(filename, arcname)
+	if not is_keep:
+		shutil.rmtree(directory)
 
 def dl(manga_url, args):
+	print("\nReceiving manga's info...")
 	manga_uuid = get_uuid(manga_url)
 	manga_title, manga_title_en = get_title(manga_uuid, args.language)
 	
@@ -395,7 +417,7 @@ def dl(manga_url, args):
 	requested_chapters = get_requested_chapters(chapters_list, dl_list)
 	if len(requested_chapters) == 0:
 		raise ValueError("Empty list of chapters. Make sure you enter the correct download range!")
-	
+
 	# download images
 	if os.path.isdir(args.outdir):
 		out_directory = args.outdir
@@ -410,11 +432,10 @@ def dl(manga_url, args):
 			manga_directory = os.path.join(out_directory, "Manga {}".format(manga_uuid))
 			if not os.path.exists(manga_directory):
 				os.makedirs(manga_directory)
-	
 	download_chapters(requested_chapters, manga_directory, args.datasaver)
 	
 	# archive
 	if args.archive != None:
-		archive_manga_directory(manga_directory, out_directory, args.archive, args.keep)
+		archive_manga_directory(manga_directory, args.archive, args.keep)
 	
 	print("\nManga \"{}\" was successfully downloaded".format(manga_title))
