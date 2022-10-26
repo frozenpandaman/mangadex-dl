@@ -1,28 +1,30 @@
-# mangadex-dl
-A Python script to download manga from [MangaDex.org](https://mangadex.org/).
+![Screenshot](screenshot.gif)
+
+# mangadex-dl 1.2
+A Python package to download manga from [MangaDex.org](https://mangadex.org/).
 
 ## Requirements
-  * [Python 3.4+](https://www.python.org/downloads/) (or [install via Homebrew](https://docs.python-guide.org/starting/install3/osx/) on macOS)
+  * [Python 3.6+](https://www.python.org/downloads/) (or [install via Homebrew](https://docs.python-guide.org/starting/install3/osx/) on macOS)
 
 ## Installation & usage
 ```
 $ git clone https://github.com/Uwuewsky/mangadex-dl
 $ cd mangadex-dl/
-$ python mangadex-dl.py [-l language_code] [-o directory] [-s] [-a manga|vol|chap] [-r all|one] [-d range] [manga_urls]
+$ python -m mangadex_dl [-g] [-l language_code] [-o directory] [-s] [-a manga|volume|chapter] [-k] [-r all|one|manual] [-d range] [manga_urls]
 ```
-You can also execute the script via `./mangadex-dl.py` on macOS and Linux. On Windows, use a backslash.
 
 ### Optional flags
+* `-g`: Runs a program in GUI mode.
 * `-l`: Download releases in a language other than English. For a list of language codes, see the [wikipedia page](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes).
 * `-o`: Use a custom output directory name to save downloaded chapters. Defaults to current directory.
 * `-s`: Download page images in lower quality (higher JPG compression/"data saver").
-* `-a`: Package downloaded chapters into .zip files. Values: `manga` (zip all manga), `vol` (zip all volumes separately), `chap` (zip all chapters)
-* `-k`: Keep original files after archiving
-* `-r`: Remove duplicate chapters from list. Values: `all` (return list as is), `one` (delete from list all duplicates)
+* `-a`: Package downloaded chapters into .zip files. Values: `manga` (zip all manga), `volume` (zip all volumes separately), `chapter` (zip all chapters).
+* `-k`: Keep original files after archiving.
+* `-r`: Remove duplicate chapters from list. Values: `all` (return list as is), `one` (default, delete from list all duplicates), `manual` (see below).
 * `-d`: Setup download range. Used for non-interactive program execution.
 
 ### How can I download a chapter from a specific scanlate group?
-If duplicate chapters are found in the list of chapters, you will be prompted to choose: download all available chapters; download only one copy; specify group priorities. Set the desired group to the highest priority and only the chapter from this group will be downloaded.
+If duplicate chapters are found in the list of chapters, you can choose: download all available chapters; download only one copy; manually specify group priorities. Set the desired group to the highest priority and only the chapter from this group will be downloaded if possible.
 
 ### Archiving feature
 The archive function uses the entire manga directory, not just the part you downloaded during the current run; it will archive all existing folders according to the specified flag. If you need to keep downloaded files without archiving, specify a different output directory.
@@ -44,9 +46,14 @@ Also some examples of INVALID input:
 * `v1(1,2,3-6)`: You cannot specify more than one chapter in parentheses, use the example above.
 
 ### Example usage
+Run the program in graphical mode:
 ```
-$ ./mangadex-dl.py -a vol
-mangadex-dl v1.1
+$ python -m mangadex_dl -g
+```
+
+Or in the console version:
+```
+$ python -m mangadex_dl -a vol
 
 Enter manga URL or ID. (leave blank to complete)
 > https://mangadex.org/title/58be6aa6-06cb-4ca5-bd20-f1392ce451fb/yotsuba-to
@@ -57,12 +64,6 @@ Enter manga URL or ID. (leave blank to complete)
 Receiving manga's info...
 
 [ 1/ 1] TITLE: Yotsuba&!
-
-Specify what to do with duplicate chapters.
-   all  - download all available chapters
-   one  - download only one chapter
-<other> - manually specify scanlate groups priority
-> one
 
 Available chapters: (total 117)
 Volume 1 :      1     2     3     4     5     6     7
@@ -102,7 +103,7 @@ The program has ended. Exiting...
 
 Instead of command-line options and manually inserting manga links, you can use a file redirection with some options:
 ```
-$ ./mangadex-dl.py -d all -r one < list.txt
+$ python -m mangadex_dl -d all -r one < list.txt
 ```
 
 ## License
