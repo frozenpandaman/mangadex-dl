@@ -26,10 +26,6 @@ def download_chapters(requested_chapters, out_directory, is_datasaver, gui={"set
 	chapter_count = 1
 	chapter_count_max = len(requested_chapters)
 	
-	# gui progress should be tk.DoubleVar
-	if gui["set"]:
-		gui["progress"].set(chapter_count)
-	
 	for chapter in requested_chapters:
 		chapter_number = chapter["attributes"]["chapter"] if chapter["attributes"]["chapter"] != None else "Oneshot"
 		chapter_name = chapter["attributes"]["title"] if chapter["attributes"]["title"] != None else ""
@@ -69,13 +65,14 @@ def download_chapters(requested_chapters, out_directory, is_datasaver, gui={"set
 				print("\r  Downloaded images [{:3}/{:3}]...".format(image_count_downloaded, image_count_max), end="")
 				image_count_downloaded += 1
 				
-				if gui["set"] and gui["exit"]:
-					for f in future_list:
-						f.cancel()
-		chapter_count += 1
-		
+				if gui["set"]:
+					if gui["exit"]:
+						for f in future_list:
+							f.cancel()
 		if gui["set"]:
 			gui["progress"].set((chapter_count/chapter_count_max)*100)
+		
+		chapter_count += 1
 	
 	print("\nChapters download completed successfully")
 	return

@@ -32,22 +32,19 @@ def archive_manga(manga_directory, archive_mode, is_keep,  gui={"set": False}):
 	directory_count_archived = 1
 	directory_count_max = len(directory_list)
 	
-	# gui progress should be tk.DoubleVar
-	if gui["set"]:
-		gui["progress"].set(directory_count_archived)
-	
 	if directory_count_max == 0:
 			print("  Looks like there is nothing to archive here.", end="")
 	
 	for directory in directory_list:
-		_archive_directory(directory, is_keep)
 		print("\r  Archiving [{:3}/{:3}]...".format(directory_count_archived, directory_count_max), end="")
-		directory_count_archived += 1
-
+		_archive_directory(directory, is_keep)
+		
 		if gui["set"]:
 			gui["progress"].set((directory_count_archived/directory_count_max)*100)
 			if gui["exit"]:
 				break
+		
+		directory_count_archived += 1
 		
 	print("\nArchiving completed successfully")
 

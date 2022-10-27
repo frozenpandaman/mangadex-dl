@@ -7,8 +7,7 @@ from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
-from collections import namedtuple
-import os.path, sys, json, traceback, concurrent.futures
+import json, traceback, concurrent.futures
 
 from .base import *
 from .parse import *
@@ -28,10 +27,10 @@ def _dl_gui(manga_url, args):
 	root.geometry("600x450")
 	try:
 		app = _MangadexDlGui(root, manga_url, args)
-		root.protocol("WM_DELETE_WINDOW", app.on_closing)
+		root.protocol("WM_DELETE_WINDOW", app.cb_on_closing)
 		root.mainloop()
-	except Exception as err:
-		messagebox.showinfo(message="{}\nSkip download.".format(traceback.format_exc()))
+	except Exception as e:
+		messagebox.showinfo(message="Error: {}\n\nSkip download.\n\n{}".format(e, traceback.format_exc()))
 
 class _MangadexDlGui:
 	
@@ -104,8 +103,8 @@ class _MangadexDlGui:
 		try:
 			self.indicator.start()
 			f(*args)
-		except Exception:
-			messagebox.showinfo(message="{}".format(traceback.format_exc()))
+		except Exception as e:
+			messagebox.showinfo(message="Error: {}\n\n{}".format(e, traceback.format_exc()))
 			self.status.set("Something went wrong!")
 		finally:
 			self.indicator.stop()
@@ -133,17 +132,6 @@ class _MangadexDlGui:
 			except:
 				pass
 		return
-	
-	def on_closing(self):
-		self.lib_options["exit"] = True
-		for future in self.futures:
-			try:
-				future.cancel()
-				if future.running():
-					future.exception(timeout=0.01)
-			except Exception:
-				pass
-		exit(0)
 	
 	def update_manga_info(self):
 		s = f"Title: {self.manga_info.title}\n"\
@@ -268,6 +256,17 @@ class _MangadexDlGui:
 	##########################
 	#       CALLBACKS        #
 	##########################
+	def cb_on_closing(self):
+		self.lib_options["exit"] = True
+		for future in self.futures:
+			try:
+				future.cancel()
+				if future.running():
+					future.exception(timeout=0.01)
+			except Exception:
+				pass
+		exit(0)
+	
 	def cb_get_manga_info(self):
 		if self.manga_url.get() == "":
 			messagebox.showinfo(message="Paste the URL first.\nChange to the English keyboard layout if you cannot paste text.")
@@ -366,7 +365,8 @@ class _MangadexDlGui:
 			self.status.set("Archive downloaded chapters...")
 			archive_manga(manga_directory, self.args.archive.get(), self.args.keep.get(), self.lib_options)
 		
-		self.status.set("Manga was downloaded{}successfully".format(" and archived " if self.args.archive.get() != "None" else ""))
+		self.lib_options["progress"].set(0.0)
+		self.status.set("Manga was downloaded {}successfully".format("and archived " if self.args.archive.get() != "None" else ""))
 		return
 	
 	def cb_show_help(self):
