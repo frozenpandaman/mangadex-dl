@@ -58,7 +58,7 @@ def _dl_console(manga_url, args):
 	
 	# requested chapters list in dl_range
 	requested_chapters = get_requested_chapters(chapters_list, dl_list)
-
+	
 	# download images
 	manga_directory = create_manga_directory(args.outdir, manga_info.title_en, manga_info.uuid)
 	download_chapters(requested_chapters, manga_directory, args.datasaver)
@@ -83,15 +83,7 @@ def _print_available_chapters(chapters_list):
 	print()
 
 
-def _resolve_duplicates_manual_console(chapters_list, duplicates_list):
-	print("Receiving scanlate groups info...")
-	scanlation_groups = get_scanlation_groups_from_duplicates(duplicates_list)
-	
-	print("Duplicated chapters have {} scanlate groups\n".format(len(scanlation_groups)))
-	
-	if len(scanlation_groups) == 0:
-		return
-	
+def _resolve_duplicates_manual_console(chapters_list, duplicates_list, scanlation_groups):
 	for group in scanlation_groups:
 		group_priority = input("Specify priority for {}. [1-5]\n> ".format(group["attributes"]["name"]))
 		group["priority"] = group_priority

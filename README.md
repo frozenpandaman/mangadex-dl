@@ -1,6 +1,6 @@
 ![Screenshot](screenshot.gif)
 
-# mangadex-dl 1.2
+# mangadex-dl 1.2.1
 A Python package to download manga from [MangaDex.org](https://mangadex.org/).
 
 ## Requirements

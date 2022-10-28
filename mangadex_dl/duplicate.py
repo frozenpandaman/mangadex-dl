@@ -28,8 +28,16 @@ def resolve_duplicated_chapters(chapters_list, resolve, resolve_manual_function)
 					if duplicate in chapters_list:
 						chapters_list.remove(duplicate)
 		return chapters_list
+	
 	# manually set scanlate groups priority
-	return resolve_manual_function(chapters_list, duplicates_list)
+	print("Receiving scanlate groups info...")
+	scanlation_groups = get_scanlation_groups_from_duplicates(duplicates_list)
+	print("Duplicated chapters have {} scanlate groups".format(len(scanlation_groups)))
+	
+	if len(scanlation_groups) == 0:
+		return
+	
+	return resolve_manual_function(chapters_list, duplicates_list, scanlation_groups)
 
 def get_duplicated_chapters(chapters_list):
 	"""

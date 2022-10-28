@@ -138,45 +138,43 @@ class _MangadexDlGui:
 		    f"Author: {', '.join(self.manga_info.authors)}\n"\
 		    f"Artist: {', '.join(self.manga_info.artists)}\n"\
 		    f"Year: {self.manga_info.year}\n"\
-		    f"Status: {self.manga_info.status}\n"\
-		    f"Original Language: {self.manga_info.original_language}\n"\
+		    f"Status: {self.manga_info.status}\n\n"\
 		    f"Last Volume: {self.manga_info.last_volume}\n"\
-		    f"Last Chapter: {self.manga_info.last_chapter}\n"\
+		    f"Last Chapter: {self.manga_info.last_chapter}\n\n"\
+		    f"Original Language: {self.manga_info.original_language}\n"\
 		    f"Content Rating: {self.manga_info.content_rating}\n"\
-		    f"Demographic: {self.manga_info.demographic}\n"\
+		    f"Demographic: {self.manga_info.demographic}\n\n"\
 		    f"Format: {', '.join(self.manga_info.tags.format)}\n"\
 		    f"Themes: {', '.join(self.manga_info.tags.theme)}\n"\
-		    f"Genres: {', '.join(self.manga_info.tags.genre)}\n"\
+		    f"Genres: {', '.join(self.manga_info.tags.genre)}\n\n"\
 		    f"Description: {self.manga_info.description}"
 		self.manga_text_info.set(s)
 		return
 	
-	def resolve_duplicates_manual_gui(self, chapters_list, duplicated_chapters_list):
+	def resolve_duplicates_manual_gui(self, chapters_list, duplicated_chapters_list, scanlation_groups):
 		self.duplicated_chapters_list = duplicated_chapters_list
-		self.scanlation_groups = get_scanlation_groups_from_duplicates(self.duplicated_chapters_list)
+		self.scanlation_groups = scanlation_groups
 		self.scanlation_groups_priority = [StringVar(value="5") for i in self.scanlation_groups]
 		
 		self.destroy_resolve_gui()
 		
-		if len(self.scanlation_groups) == 0:
-			label = ttk.Label(self.scanlate_frame, text="No duplicate chapters.")
-			label.grid(column=0, row=0, sticky=(E), pady=self.padding, padx=self.padding)
-		else:
-			index = 0
+		index = 0
+		for group in self.scanlation_groups:
+			label = ttk.Label(self.scanlate_frame, text=group["attributes"]["name"])
+			label.grid(column=0, row=index+1, sticky=(E), pady=self.padding, padx=self.padding)
 			
-			for group in self.scanlation_groups:
-				label = ttk.Label(self.scanlate_frame, text=group["attributes"]["name"])
-				label.grid(column=0, row=index+1, sticky=(E), pady=self.padding, padx=self.padding)
-
-				combobox = ttk.Combobox(self.scanlate_frame, textvariable=self.scanlation_groups_priority[index])
-				combobox["values"] = ("1", "2", "3", "4", "5")
-				combobox.grid(column=1, row=index+1, sticky=(W), pady=self.padding, padx=self.padding)
-
-				index += 1
+			combobox = ttk.Combobox(self.scanlate_frame, state="readonly", textvariable=self.scanlation_groups_priority[index])
+			combobox["values"] = ("1", "2", "3", "4", "5")
+			combobox.grid(column=1, row=index+1, sticky=(W), pady=self.padding, padx=self.padding)
 			
-			button = ttk.Button(self.scanlate_frame, text="Apply", command=self.cb_resolve_duplicates)
-			button.grid(column=1, row=0, sticky=(E), pady=self.padding, padx=self.padding)
-
+			index += 1
+		
+		label = ttk.Label(self.scanlate_frame, text="Highest priority: 1.\nLowest priority: 5.")
+		label.grid(column=0, row=0, sticky=(W), pady=self.padding, padx=self.padding)
+		
+		button = ttk.Button(self.scanlate_frame, text="Apply", command=self.cb_resolve_duplicates)
+		button.grid(column=1, row=0, sticky=(E), pady=self.padding, padx=self.padding)
+		
 		return chapters_list
 	
 	def destroy_resolve_gui(self):

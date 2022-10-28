@@ -50,6 +50,16 @@ def get_chapters_list(manga_uuid, language):
 				    .format(manga_uuid, language, offset))
 		chapters_list += response["data"]
 		offset += 500
+	
+	unavailable_list = []
+	for chapter in chapters_list:
+		if chapter["attributes"]["externalUrl"] != None:
+			unavailable_list.append(chapter)
+	if len(unavailable_list) != 0:
+		for chapter in unavailable_list:
+			chapters_list.remove(chapter)
+		print("Warning: {} chapters are not available from Mangadex.org.".format(len(unavailable_list)))
+	
 	return chapters_list
 
 def get_chapters_info(manga_uuid, language):
@@ -69,7 +79,7 @@ def create_manga_directory(user_directory, manga_title, manga_uuid):
 		try:
 			os.makedirs(manga_directory)
 		except OSError:
-			print("Cannot create manga directory. Changed name to UUID.")
+			print("Warning: Cannot create manga directory. Changed name to UUID.")
 			manga_directory = os.path.join(out_directory, "Manga {}".format(manga_uuid))
 			os.makedirs(manga_directory)
 	return manga_directory

@@ -43,7 +43,6 @@ def download_chapters(requested_chapters, out_directory, is_datasaver, gui={"set
 		
 		if image_count_max == 0:
 			print("  Chapter {} is not available from Mangadex.".format(chapter_number))
-			print("  It looks like Mangadex contains a link to a third-party site, but not the images themselves.")
 			continue
 		
 		directory_chapter = os.path.join(out_directory, "Volume {}".format(chapter_volume), "Chapter {}".format(chapter_number))
