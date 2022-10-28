@@ -53,7 +53,7 @@ $ python -m mangadex_dl -g
 
 Or in the console version:
 ```
-$ python -m mangadex_dl -a vol
+$ python -m mangadex_dl -a volume
 
 Enter manga URL or ID. (leave blank to complete)
 > https://mangadex.org/title/58be6aa6-06cb-4ca5-bd20-f1392ce451fb/yotsuba-to
@@ -97,13 +97,11 @@ Archive downloaded chapters...
 Archiving completed successfully
 
 Manga "Yotsuba to!" was successfully downloaded
-
-The program has ended. Exiting...
 ```
 
 Instead of command-line options and manually inserting manga links, you can use a file redirection with some options:
 ```
-$ python -m mangadex_dl -d all -r one < list.txt
+$ python -m mangadex_dl -d all < list.txt
 ```
 
 ## License
