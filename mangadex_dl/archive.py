@@ -33,14 +33,15 @@ def archive_manga(manga_directory, archive_mode, is_keep,  gui={"set": False}):
 	directory_count_max = len(directory_list)
 	
 	if directory_count_max == 0:
-			print("  Looks like there is nothing to archive here.", end="")
+		print("  Looks like there is nothing to archive here.", end="")
 	
 	for directory in directory_list:
 		print("\r  Archiving [{:3}/{:3}]...".format(directory_count_archived, directory_count_max), end="")
 		_archive_directory(directory, is_keep)
 		
 		if gui["set"]:
-			gui["progress"].set((directory_count_archived/directory_count_max)*100)
+			gui["progress_chapter"].set((directory_count_archived/directory_count_max)*100)
+			gui["progress_chapter_text"].set("[ {} / {} ]".format(directory_count_archived, directory_count_max))
 			if gui["exit"]:
 				break
 		

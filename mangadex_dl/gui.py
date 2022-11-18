@@ -24,7 +24,7 @@ def init_gui(args):
 
 def _dl_gui(manga_url, args):
 	root = Tk()
-	root.geometry("600x450")
+	root.geometry("700x490")
 	try:
 		app = _MangadexDlGui(root, manga_url, args)
 		root.protocol("WM_DELETE_WINDOW", app.cb_on_closing)
@@ -40,10 +40,10 @@ class _MangadexDlGui:
 		self.tree_a = None
 		self.tree_b = None
 		self.indicator = None
-		self.progressbar = None
-		self.scanlate_frame = None
 		self.status = StringVar(value="None")
-		self.lib_options = {"set": True, "progress": DoubleVar(value=0.0), "exit": False}
+		self.lib_options = {"set": True, "exit": False,
+				    "progress_chapter": DoubleVar(value=0.0), "progress_page": DoubleVar(value=0.0),
+				    "progress_chapter_text": StringVar(value="[ - / - ]"), "progress_page_text": StringVar(value="[ - / - ]")}
 		
 		self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 		self.futures = []
@@ -160,25 +160,25 @@ class _MangadexDlGui:
 		
 		index = 0
 		for group in self.scanlation_groups:
-			label = ttk.Label(self.scanlate_frame, text=group["attributes"]["name"])
+			label = ttk.Label(self.tab_scanlate, text=group["attributes"]["name"])
 			label.grid(column=0, row=index+1, sticky=(E), pady=self.padding, padx=self.padding)
 			
-			combobox = ttk.Combobox(self.scanlate_frame, state="readonly", textvariable=self.scanlation_groups_priority[index])
+			combobox = ttk.Combobox(self.tab_scanlate, state="readonly", textvariable=self.scanlation_groups_priority[index])
 			combobox["values"] = ("1", "2", "3", "4", "5")
 			combobox.grid(column=1, row=index+1, sticky=(W), pady=self.padding, padx=self.padding)
 			
 			index += 1
 		
-		label = ttk.Label(self.scanlate_frame, text="Highest priority: 1.\nLowest priority: 5.")
+		label = ttk.Label(self.tab_scanlate, text="Highest priority: 1.\nLowest priority: 5.")
 		label.grid(column=0, row=0, sticky=(W), pady=self.padding, padx=self.padding)
 		
-		button = ttk.Button(self.scanlate_frame, text="Apply", command=self.cb_resolve_duplicates)
+		button = ttk.Button(self.tab_scanlate, text="Apply", command=self.cb_resolve_duplicates)
 		button.grid(column=1, row=0, sticky=(E), pady=self.padding, padx=self.padding)
 		
 		return chapters_list
 	
 	def destroy_resolve_gui(self):
-		for widget in self.scanlate_frame.winfo_children():
+		for widget in self.tab_scanlate.winfo_children():
 			widget.destroy()
 		return
 	
@@ -358,12 +358,15 @@ class _MangadexDlGui:
 		
 		manga_directory = create_manga_directory(self.args.outdir.get(), self.manga_info.title_en, self.manga_info.uuid)
 		download_chapters(self.chapters_list_selected, manga_directory, self.args.datasaver.get(), self.lib_options)
-
+		
 		if self.args.archive.get() != "None":
 			self.status.set("Archive downloaded chapters...")
 			archive_manga(manga_directory, self.args.archive.get(), self.args.keep.get(), self.lib_options)
 		
-		self.lib_options["progress"].set(0.0)
+		self.lib_options["progress_chapter"].set(0)
+		self.lib_options["progress_page"].set(0)
+		self.lib_options["progress_chapter_text"].set("[ - / - ]")
+		self.lib_options["progress_page_text"].set("[ - / - ]")
 		self.status.set("Manga was downloaded {}successfully".format("and archived " if self.args.archive.get() != "None" else ""))
 		return
 	
@@ -538,35 +541,58 @@ class _MangadexDlGui:
 	
 	def init_tab_scanlate(self):
 		# ok, we can't make scrollbar for frame in tk
-		self.scanlate_frame = ttk.Frame()
+		frame = ttk.Frame()
 		
-		label = ttk.Label(self.scanlate_frame, text="You can manually prioritize scanlate groups.\n"\
+		label = ttk.Label(frame, text="You can manually prioritize scanlate groups.\n"\
 				  "Specify this in the settings tab, reload the URL and set the priorities in this tab.")
 		label.grid(column=0, row=0, pady=self.padding, padx=self.padding)
 		
-		return self.scanlate_frame
+		return frame
 	
 	def init_statusbar(self, root):
 		frame = ttk.Frame(root)
-		frame.rowconfigure(0, weight=0) # status label
-		frame.rowconfigure(1, weight=1) # status text itself
-		frame.columnconfigure(0, weight=0) # button help
-		frame.columnconfigure(1, weight=2) # progressbar
-		frame.columnconfigure(2, weight=1) # indicator
+		frame.rowconfigure(0, weight=0) # progressbar_chap, indicator
+		frame.rowconfigure(1, weight=0) # progressbar_page, help button
+		frame.rowconfigure(2, weight=0) # status text
+		frame.columnconfigure(0, weight=0) # progressbar labels
+		frame.columnconfigure(1, weight=1) # progressbar, status
+		frame.columnconfigure(2, weight=0) # progress numbers
+		frame.columnconfigure(3, weight=0) # separator
+		frame.columnconfigure(4, weight=0) # indicator, help button
 		
-		button = ttk.Button(frame, text="?", command=self.cb_show_help)
-		button.grid(column=0, row=0, sticky=(W), pady=self.padding, padx=self.padding)
+		###
+		label_a = ttk.Label(frame, text="Chapters: ")
+		label_a.grid(column=0, row=0, sticky=(E), pady=self.padding, padx=self.padding)
+
+		label_b = ttk.Label(frame, text="Pages: ")
+		label_b.grid(column=0, row=1, sticky=(E), pady=self.padding, padx=self.padding)
+
+		label_c = ttk.Label(frame, text="Status: ")
+		label_c.grid(column=0, row=2, sticky=(E), pady=self.padding, padx=self.padding)
+		###
+		progressbar_chap = ttk.Progressbar(frame, orient=HORIZONTAL, mode="determinate", variable=self.lib_options["progress_chapter"])
+		progressbar_chap.grid(column=1, row=0, sticky=(E, W), pady=self.padding, padx=self.padding)
 		
-		self.progressbar = ttk.Progressbar(frame, orient=HORIZONTAL, mode="determinate", variable=self.lib_options["progress"])
-		self.progressbar.grid(column=1, row=0, sticky=(E, W), pady=self.padding, padx=self.padding)
-		
-		self.indicator = ttk.Progressbar(frame, orient=HORIZONTAL, mode="indeterminate")
-		self.indicator.grid(column=2, row=0, sticky=(E, W), pady=self.padding, padx=self.padding)
-		
-		label = ttk.Label(frame, text="Status: ")
-		label.grid(column=0, row=1, sticky=(E), pady=self.padding, padx=self.padding)
+		progressbar_page = ttk.Progressbar(frame, orient=HORIZONTAL, mode="determinate", variable=self.lib_options["progress_page"])
+		progressbar_page.grid(column=1, row=1, sticky=(E, W), pady=self.padding, padx=self.padding)
 		
 		status = ttk.Label(frame, textvariable=self.status)
-		status.grid(column=1, row=1, sticky=(W), pady=self.padding, padx=self.padding)
+		status.grid(column=1, row=2, sticky=(W), pady=self.padding, padx=self.padding)
+		###
+		progress_chapter_text = ttk.Label(frame, textvariable=self.lib_options["progress_chapter_text"])
+		progress_chapter_text.grid(column=2, row=0, sticky=(W), pady=self.padding, padx=self.padding)
+
+		progress_page_text = ttk.Label(frame, textvariable=self.lib_options["progress_page_text"])
+		progress_page_text.grid(column=2, row=1, sticky=(W), pady=self.padding, padx=self.padding)
+		###
+		separator = ttk.Separator(frame, orient=VERTICAL)
+		separator.grid(column=3, row=0, rowspan=3, sticky=(N, S))
+		###
+		self.indicator = ttk.Progressbar(frame, orient=HORIZONTAL, mode="indeterminate")
+		self.indicator.grid(column=4, row=0, sticky=(E, W), pady=self.padding, padx=self.padding)
+		
+		button = ttk.Button(frame, text="?", command=self.cb_show_help)
+		button.grid(column=4, row=1, sticky=(E, W), pady=self.padding, padx=self.padding)
+		###
 		
 		return frame

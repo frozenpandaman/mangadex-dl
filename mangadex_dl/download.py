@@ -27,6 +27,10 @@ def download_chapters(requested_chapters, out_directory, is_datasaver, gui={"set
 	chapter_count_max = len(requested_chapters)
 	
 	for chapter in requested_chapters:
+		if gui["set"]:
+			gui["progress_chapter"].set((chapter_count/chapter_count_max)*100)
+			gui["progress_chapter_text"].set("[ {} / {} ]".format(chapter_count, chapter_count_max))
+		
 		chapter_number = chapter["attributes"]["chapter"] if chapter["attributes"]["chapter"] != None else "Oneshot"
 		chapter_name = chapter["attributes"]["title"] if chapter["attributes"]["title"] != None else ""
 		chapter_volume = chapter["attributes"]["volume"] if chapter["attributes"]["volume"] != None else "Unknown"
@@ -38,7 +42,7 @@ def download_chapters(requested_chapters, out_directory, is_datasaver, gui={"set
 		image_url_list = chapter_json["chapter"]["dataSaver"] if is_datasaver else chapter_json["chapter"]["data"]
 		
 		image_count = 1
-		image_count_downloaded = 1
+		image_count_downloaded = 0
 		image_count_max = len(image_url_list)
 		
 		if image_count_max == 0:
@@ -61,15 +65,18 @@ def download_chapters(requested_chapters, out_directory, is_datasaver, gui={"set
 				future_list.append(executor.submit(_download_image, base_url + image_url, image_count, directory_chapter))
 				image_count += 1
 			for future in concurrent.futures.as_completed(future_list):
-				print("\r  Downloaded images [{:3}/{:3}]...".format(image_count_downloaded, image_count_max), end="")
 				image_count_downloaded += 1
+				print("\r  Downloaded images [{:3}/{:3}]...".format(image_count_downloaded, image_count_max), end="")
 				
 				if gui["set"]:
+					gui["progress_page"].set((image_count_downloaded/image_count_max)*100)
+					gui["progress_page_text"].set("[ {} / {} ]".format(image_count_downloaded, image_count_max))
 					if gui["exit"]:
 						for f in future_list:
 							f.cancel()
 		if gui["set"]:
-			gui["progress"].set((chapter_count/chapter_count_max)*100)
+			gui["progress_page"].set(0)
+			gui["progress_page_text"].set("[ - / - ]")
 		
 		chapter_count += 1
 	
