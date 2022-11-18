@@ -6,11 +6,6 @@ Functions for archiving the manga directory.
 import os, shutil, zipfile
 
 def archive_manga(manga_directory, archive_mode, is_keep,  gui={"set": False}):
-	if archive_mode == None:
-		return
-	
-	print("\nArchive downloaded chapters...")
-	
 	directory_list = []
 	
 	if archive_mode == "manga":
@@ -33,10 +28,10 @@ def archive_manga(manga_directory, archive_mode, is_keep,  gui={"set": False}):
 	directory_count_max = len(directory_list)
 	
 	if directory_count_max == 0:
-		print("  Looks like there is nothing to archive here.", end="")
+		print("  Looks like there is nothing to archive here.", end="", flush=True)
+		return
 	
 	for directory in directory_list:
-		print("\r  Archiving [{:3}/{:3}]...".format(directory_count_archived, directory_count_max), end="")
 		_archive_directory(directory, is_keep)
 		
 		if gui["set"]:
@@ -44,10 +39,11 @@ def archive_manga(manga_directory, archive_mode, is_keep,  gui={"set": False}):
 			gui["progress_chapter_text"].set("[ {} / {} ]".format(directory_count_archived, directory_count_max))
 			if gui["exit"]:
 				break
+		else:
+			print("\r  Archiving [{:3}/{:3}]...".format(directory_count_archived, directory_count_max), end="")
 		
 		directory_count_archived += 1
-		
-	print("\nArchiving completed successfully")
+	return
 
 def _archive_directory(directory, is_keep):
 	archive_format = "zip" # you can change that to cbz
@@ -61,3 +57,4 @@ def _archive_directory(directory, is_keep):
 				zip_file.write(filename, arcname)
 	if not is_keep:
 		shutil.rmtree(directory)
+	return

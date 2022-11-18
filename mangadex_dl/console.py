@@ -30,6 +30,7 @@ def init_console(args):
 			_dl_console(manga_url, args)
 		except Exception:
 			print("{}\nSkip download.".format(traceback.format_exc()))
+	return
 
 def _dl_console(manga_url, args):
 	print("\nReceiving manga's info...")
@@ -62,11 +63,16 @@ def _dl_console(manga_url, args):
 	# download images
 	manga_directory = create_manga_directory(args.outdir, manga_info.title_en, manga_info.uuid)
 	download_chapters(requested_chapters, manga_directory, args.datasaver)
+	print("\nChapters download completed successfully")
 	
 	# archive
-	archive_manga(manga_directory, args.archive, args.keep)
+	if args.archive != None:
+		print("\nArchive downloaded chapters...")
+		archive_manga(manga_directory, args.archive, args.keep)
+		print("\nArchiving completed successfully")
 	
 	print("\nManga \"{}\" was successfully downloaded".format(manga_info.title))
+	return
 
 def _print_available_chapters(chapters_list):
 	print("Available chapters: (total {})".format(len(chapters_list)), end="")

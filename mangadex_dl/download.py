@@ -27,15 +27,15 @@ def download_chapters(requested_chapters, out_directory, is_datasaver, gui={"set
 	chapter_count_max = len(requested_chapters)
 	
 	for chapter in requested_chapters:
-		if gui["set"]:
-			gui["progress_chapter"].set((chapter_count/chapter_count_max)*100)
-			gui["progress_chapter_text"].set("[ {} / {} ]".format(chapter_count, chapter_count_max))
-		
 		chapter_number = chapter["attributes"]["chapter"] if chapter["attributes"]["chapter"] != None else "Oneshot"
 		chapter_name = chapter["attributes"]["title"] if chapter["attributes"]["title"] != None else ""
 		chapter_volume = chapter["attributes"]["volume"] if chapter["attributes"]["volume"] != None else "Unknown"
-		
-		print("\nDownloading chapter [{:3}/{:3}] Ch.{} {}".format(chapter_count, chapter_count_max, chapter_number, chapter_name))
+
+		if gui["set"]:
+			gui["progress_chapter"].set((chapter_count/chapter_count_max)*100)
+			gui["progress_chapter_text"].set("[ {} / {} ]".format(chapter_count, chapter_count_max))
+		else:
+			print("\nDownloading chapter [{:3}/{:3}] Ch.{} {}".format(chapter_count, chapter_count_max, chapter_number, chapter_name))
 		
 		chapter_json = get_json("https://api.mangadex.org/at-home/server/{}".format(chapter["id"]))
 		base_url = "{}/{}/{}/".format(chapter_json["baseUrl"], "data-saver" if is_datasaver else "data", chapter_json["chapter"]["hash"])
@@ -66,7 +66,6 @@ def download_chapters(requested_chapters, out_directory, is_datasaver, gui={"set
 				image_count += 1
 			for future in concurrent.futures.as_completed(future_list):
 				image_count_downloaded += 1
-				print("\r  Downloaded images [{:3}/{:3}]...".format(image_count_downloaded, image_count_max), end="")
 				
 				if gui["set"]:
 					gui["progress_page"].set((image_count_downloaded/image_count_max)*100)
@@ -74,13 +73,14 @@ def download_chapters(requested_chapters, out_directory, is_datasaver, gui={"set
 					if gui["exit"]:
 						for f in future_list:
 							f.cancel()
+				else:
+					print("\r  Downloaded images [{:3}/{:3}]...".format(image_count_downloaded, image_count_max), end="")
+		
 		if gui["set"]:
 			gui["progress_page"].set(0)
 			gui["progress_page_text"].set("[ - / - ]")
 		
 		chapter_count += 1
-	
-	print("\nChapters download completed successfully")
 	return
 
 def _download_image(full_url, image_count, directory_chapter):

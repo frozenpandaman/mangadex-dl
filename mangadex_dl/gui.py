@@ -367,6 +367,7 @@ class _MangadexDlGui:
 		self.lib_options["progress_page"].set(0)
 		self.lib_options["progress_chapter_text"].set("[ - / - ]")
 		self.lib_options["progress_page_text"].set("[ - / - ]")
+		
 		self.status.set("Manga was downloaded {}successfully".format("and archived " if self.args.archive.get() != "None" else ""))
 		return
 	
@@ -557,6 +558,7 @@ class _MangadexDlGui:
 		frame.columnconfigure(0, weight=0) # progressbar labels
 		frame.columnconfigure(1, weight=1) # progressbar, status
 		frame.columnconfigure(2, weight=0) # progress numbers
+		frame.grid_columnconfigure(2, minsize=90)
 		frame.columnconfigure(3, weight=0) # separator
 		frame.columnconfigure(4, weight=0) # indicator, help button
 		
@@ -580,10 +582,10 @@ class _MangadexDlGui:
 		status.grid(column=1, row=2, sticky=(W), pady=self.padding, padx=self.padding)
 		###
 		progress_chapter_text = ttk.Label(frame, textvariable=self.lib_options["progress_chapter_text"])
-		progress_chapter_text.grid(column=2, row=0, sticky=(W), pady=self.padding, padx=self.padding)
-
+		progress_chapter_text.grid(column=2, row=0, sticky=(E, W), pady=self.padding, padx=self.padding)
+		
 		progress_page_text = ttk.Label(frame, textvariable=self.lib_options["progress_page_text"])
-		progress_page_text.grid(column=2, row=1, sticky=(W), pady=self.padding, padx=self.padding)
+		progress_page_text.grid(column=2, row=1, sticky=(E, W), pady=self.padding, padx=self.padding)
 		###
 		separator = ttk.Separator(frame, orient=VERTICAL)
 		separator.grid(column=3, row=0, rowspan=3, sticky=(N, S))
