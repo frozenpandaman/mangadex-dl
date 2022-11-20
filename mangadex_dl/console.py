@@ -17,7 +17,7 @@ def init_console(args):
 		while True:
 			print()
 			try:
-				manga_input = input("Enter manga URL or ID. (leave blank to complete)\n"\
+				manga_input = input("Enter URL or text to search by title. (leave blank to complete)\n"\
 						    "> ")
 			except EOFError:
 				break
@@ -34,7 +34,15 @@ def init_console(args):
 
 def _dl_console(manga_url, args):
 	print("\nReceiving manga's info...")
-	manga_info = get_manga_info(manga_url, args.language)
+	try:
+		manga_info = get_manga_info(manga_url, args.language)
+	except ValueError:
+		manga_list_found = search_manga(manga_url, args.language)
+		_print_found_manga_list(manga_list_found)
+		user_input = int(input("Insert number (zero to cancel):\n> "))
+		if user_input == 0:
+			return
+		manga_info = manga_list_found[user_input-1]
 	
 	print("\n[{:2}/{:2}] TITLE: {}\n".format(args.manga_urls.index(manga_url)+1, len(args.manga_urls), manga_info.title))
 	
@@ -73,6 +81,13 @@ def _dl_console(manga_url, args):
 	
 	print("\nManga \"{}\" was successfully downloaded".format(manga_info.title))
 	return
+
+def _print_found_manga_list(manga_list):
+	print("The following titles were found on request:")
+	index = 1
+	for manga in manga_list:
+		print("{:2}. {} ({}) by {}".format(index, manga.title, manga.year, ", ".join(manga.authors)))
+		index += 1
 
 def _print_available_chapters(chapters_list):
 	print("Available chapters: (total {})".format(len(chapters_list)), end="")

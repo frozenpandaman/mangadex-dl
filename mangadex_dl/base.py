@@ -8,6 +8,12 @@ from collections import namedtuple
 
 from .download import *
 
+def search_manga(title, language):
+	data = urllib.parse.urlencode({"title": title})
+	response = get_json("https://api.mangadex.org/manga?{}".format(data))
+	
+	return [get_manga_info(manga["id"], language) for manga in response["data"]]
+
 def get_manga_info(manga_url, language):
 	manga_info = namedtuple("manga_info", ["uuid", "title", "title_en", "authors", "artists", "year",
 					       "status", "last_volume", "last_chapter", "demographic",
@@ -139,21 +145,21 @@ def _get_tags(response):
 		
 def _get_authors(response):
 	"""
-	This function returns a maximum of 5 authors only. Getting a big list from anthologies is too long.
+	This function returns a maximum of 3 authors only. Getting a big list from anthologies is too long.
 	"""
 	authors = []
 	artists = []
 	for relation in response["data"]["relationships"]:
 		if relation["type"] == "author":
-			if len(authors) < 5:
+			if len(authors) < 3:
 				authors.append(_get_person_info(relation["id"]))
-			elif len(authors) == 5:
+			elif len(authors) == 3:
 				authors.append("and others...")
 			continue
 		if relation["type"] == "artist":
-			if len(artists) < 5:
+			if len(artists) < 3:
 				artists.append(_get_person_info(relation["id"]))
-			elif len(authors) == 5:
+			elif len(authors) == 3:
 				artists.append("and others...")
 	
 	return authors, artists

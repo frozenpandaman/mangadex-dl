@@ -57,6 +57,8 @@ class _MangadexDlGui:
 		self.duplicated_chapters_list = []
 		self.manga_text_info = StringVar(value="Insert URL and press Search.")
 		self.manga_url = StringVar(value=manga_url)
+		self.manga_list_found = []
+		self.manga_list_found_var = StringVar(value=self.manga_list_found)
 		
 		# process command-line arguments
 		args.outdir = check_output_directory(args.outdir)
@@ -128,7 +130,10 @@ class _MangadexDlGui:
 				self.set_widget_state(child, state)
 		else:
 			try:
-				widget.configure(state="enable" if state else "disable")
+				if widget.winfo_class() == "Listbox": # i cant take it anymore
+					widget.configure(state="normal" if state else "disable")
+				else:
+					widget.configure(state="enable" if state else "disable")
 			except:
 				pass
 		return
@@ -184,6 +189,11 @@ class _MangadexDlGui:
 	
 	def get_chapters_list(self):
 		return get_chapters_list(self.manga_info.uuid, self.args.language.get())
+	
+	def update_search_results_list(self):
+		name_list = ["{} ({}) by {}".format(manga.title, manga.year, ", ".join(manga.authors)) for manga in self.manga_list_found]
+		self.manga_list_found_var.set(name_list)
+		return
 	
 	def update_tree_chapters(self):
 		# Tk does not know about MVC pattern, and manually maintaining it is too troublesome.
@@ -265,6 +275,13 @@ class _MangadexDlGui:
 				pass
 		exit(0)
 	
+	def cb_search_result_select(self, e):
+		if len(e) != 0:
+			self.manga_info = self.manga_list_found[e[0]]
+			self.manga_url.set(self.manga_info.uuid)
+			self.update_manga_info()
+		return
+	
 	def cb_get_manga_info(self):
 		if self.manga_url.get() == "":
 			messagebox.showinfo(message="Paste the URL first.\nChange to the English keyboard layout if you cannot paste text.")
@@ -279,7 +296,14 @@ class _MangadexDlGui:
 		
 		# start downloading
 		self.status.set("Receiving manga's info...")
-		self.manga_info = get_manga_info(self.manga_url.get(), self.args.language.get())
+		try:
+			self.manga_info = get_manga_info(self.manga_url.get(), self.args.language.get())
+		except ValueError:
+			self.manga_list_found = search_manga(self.manga_url.get(), self.args.language.get())
+			self.status.set("Select title and search again")
+			self.update_search_results_list()
+			return
+		
 		self.update_manga_info()
 		
 		self.status.set("Receiving available chapters...")
@@ -373,7 +397,7 @@ class _MangadexDlGui:
 	
 	def cb_show_help(self):
 		help_str = "1. Check Settings tab. The settings are applied immediately when changed, but the old search results are preserved.\n"\
-			   "2. Paste URL in searchbar and press Search. Change to the English keyboard layout if you cannot paste text.\n"\
+			   "2. Paste URL or search query in searchbar and press Search. Change to the English keyboard layout if you cannot paste text.\n"\
 			   "3. Select desired chapters in Download tab, then press Download. Mouse click on individual volumes or chapters entry.\n\n"\
 			   "If you specify two or more manga links on the command line, close the main window after downloading, the following window should open.\n\n"\
 			   "The options specified on the command line will be the default values in the current Settings tab."
@@ -472,25 +496,49 @@ class _MangadexDlGui:
 		frame = ttk.Frame()
 		frame.rowconfigure(0, weight=0)
 		frame.rowconfigure(1, weight=1)
-		frame.columnconfigure(0, weight=0)
+		frame.columnconfigure(0, weight=0, minsize=320)
 		frame.columnconfigure(1, weight=1)
-		frame.columnconfigure(2, weight=0)
+
+		###
+		searchbar_frame = ttk.Frame(frame)
+		searchbar_frame.grid(column=0, row=0, columnspan=2, sticky=(E, W))
+		searchbar_frame.columnconfigure(0, weight=0)
+		searchbar_frame.columnconfigure(1, weight=1)
+		searchbar_frame.columnconfigure(2, weight=0)
 		
-		label = ttk.Label(frame, text="URL:")
+		label = ttk.Label(searchbar_frame, text="URL or search query:")
 		label.grid(column=0, row=0, pady=self.padding, padx=self.padding)
 		
-		entry = ttk.Entry(frame, textvariable=self.manga_url)
+		entry = ttk.Entry(searchbar_frame, textvariable=self.manga_url)
 		entry.grid(column=1, row=0, sticky=(E, W), pady=self.padding, padx=self.padding)
 		
-		button = ttk.Button(frame, text="Search", command=lambda:self.async_run(self.cb_get_manga_info))
+		button = ttk.Button(searchbar_frame, text="Search", command=lambda:self.async_run(self.cb_get_manga_info))
 		button.grid(column=2, row=0, pady=self.padding, padx=self.padding)
+		###
+		search_results_frame = ttk.Labelframe(frame, text="Search Results")
+		search_results_frame.grid(column=0, row=1, sticky=(N, S, E, W), pady=self.padding, padx=self.padding)
+		search_results_frame.rowconfigure(0, weight=1)
+		search_results_frame.rowconfigure(1, weight=0)
+		search_results_frame.columnconfigure(0, weight=1)
+		search_results_frame.columnconfigure(1, weight=0)
+		
+		result_listbox = Listbox(search_results_frame, listvariable=self.manga_list_found_var)
+		result_listbox.grid(column=0, row=0, sticky=(N, S, E, W), pady=self.padding, padx=self.padding)
+		
+		scrollbar_a = ttk.Scrollbar(search_results_frame, orient=VERTICAL, command=result_listbox.yview)
+		scrollbar_a.grid(column=1, row=0, sticky=(N, S))
+		scrollbar_b = ttk.Scrollbar(search_results_frame, orient=HORIZONTAL, command=result_listbox.xview)
+		scrollbar_b.grid(column=0, row=1, columnspan=2, sticky=(E, W))
 
+		result_listbox.configure(yscrollcommand=scrollbar_a.set)
+		result_listbox.configure(xscrollcommand=scrollbar_b.set)
+		result_listbox.bind("<<ListboxSelect>>", lambda e: self.cb_search_result_select(result_listbox.curselection()))
+		###
 		frame_info = ttk.Labelframe(frame, text="Info")
-		frame_info.grid(column=0, row=1, columnspan=3, sticky=(N, S, E, W), pady=self.padding, padx=self.padding)
+		frame_info.grid(column=1, row=1, sticky=(N, S, E, W), pady=self.padding, padx=self.padding)
 		
-		label_info = ttk.Label(frame_info, textvariable=self.manga_text_info, wraplength=800)
+		label_info = ttk.Label(frame_info, textvariable=self.manga_text_info, wraplength=500)
 		label_info.grid(column=0, row=0, sticky=(N, S, E, W), pady=self.padding, padx=self.padding)
-		
 		return frame
 	
 	def init_tab_download(self):
