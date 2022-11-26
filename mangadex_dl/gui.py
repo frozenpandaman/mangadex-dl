@@ -24,7 +24,7 @@ def init_gui(args):
 
 def _dl_gui(manga_url, args):
 	root = Tk()
-	root.geometry("700x490")
+	root.geometry("850x530")
 	try:
 		app = _MangadexDlGui(root, manga_url, args)
 		root.protocol("WM_DELETE_WINDOW", app.cb_on_closing)
@@ -300,7 +300,11 @@ class _MangadexDlGui:
 			self.manga_info = get_manga_info(self.manga_url.get(), self.args.language.get())
 		except ValueError:
 			self.manga_list_found = search_manga(self.manga_url.get(), self.args.language.get())
-			self.status.set("Select title and search again")
+			if len(self.manga_list_found) == 0:
+				self.status.set("Nothing was found according to your request")
+			else:
+				self.status.set("Select title and search again")
+			
 			self.update_search_results_list()
 			return
 		

@@ -34,15 +34,7 @@ def init_console(args):
 
 def _dl_console(manga_url, args):
 	print("\nReceiving manga's info...")
-	try:
-		manga_info = get_manga_info(manga_url, args.language)
-	except ValueError:
-		manga_list_found = search_manga(manga_url, args.language)
-		_print_found_manga_list(manga_list_found)
-		user_input = int(input("Insert number (zero to cancel):\n> "))
-		if user_input == 0:
-			return
-		manga_info = manga_list_found[user_input-1]
+	manga_info = _search_manga_info(manga_url, args.language)
 	
 	print("\n[{:2}/{:2}] TITLE: {}\n".format(args.manga_urls.index(manga_url)+1, len(args.manga_urls), manga_info.title))
 	
@@ -81,6 +73,25 @@ def _dl_console(manga_url, args):
 	
 	print("\nManga \"{}\" was successfully downloaded".format(manga_info.title))
 	return
+
+def _search_manga_info(manga_url, language):
+	try:
+		manga_info = get_manga_info(manga_url, language)
+		return manga_info
+	except ValueError:
+		pass
+	
+	manga_list_found = search_manga(manga_url, language)
+	if len(manga_list_found) == 0:
+		raise ValueError("Nothing was found according to your request")
+	if len(manga_list_found) == 1:
+		return manga_list_found[0]
+	
+	_print_found_manga_list(manga_list_found)
+	user_input = int(input("Insert number (zero to cancel):\n> "))
+	if user_input == 0:
+		raise ValueError("The program was canceled by the user")
+	manga_info = manga_list_found[user_input-1]
 
 def _print_found_manga_list(manga_list):
 	print("The following titles were found on request:")
