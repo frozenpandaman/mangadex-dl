@@ -107,24 +107,33 @@ def _get_uuid(manga_url):
 		raise ValueError("Cannot retrieve manga UUID")
 
 def _get_title(response, language):
-	title_en = response["data"]["attributes"]["title"]["en"]
+	title_dict = response["data"]["attributes"]["title"]
+	alt_title_dict = response["data"]["attributes"]["altTitles"]
+	
+	if "en" in title_dict:
+		title_en = title_dict["en"]
+	elif len(title_dict) != 0:
+		title_en = next(iter(title_dict.values()))
+	else:
+		title_en = response["data"]["id"]
 	title = title_en
 	
-	if language in response["data"]["attributes"]["title"]:
-		title = response["data"]["attributes"]["title"][language]
+	if language in title_dict:
+		title = title_dict[language]
 	else:
-		for altTitle in response["data"]["attributes"]["altTitles"]:
-			if language in altTitle:
-				title = altTitle[language]
+		for alt_title in alt_title_dict:
+			if language in alt_title:
+				title = alt_title[language]
 	return title, title_en
 
 def _get_description(response, language):
+	desc_dict = response["data"]["attributes"]["description"]
 	desc = "Description missing"
-	if "en" in response["data"]["attributes"]["description"]:
-		desc = response["data"]["attributes"]["description"]["en"]
 	
-	if language in response["data"]["attributes"]["description"]:
-		desc = response["data"]["attributes"]["description"][language]
+	if "en" in desc_dict:
+		desc = desc_dict["en"]
+	if language in desc_dict:
+		desc = desc_dict[language]
 	
 	return desc
 
@@ -133,13 +142,20 @@ def _get_tags(response):
 	tags.format = []
 	tags.theme = []
 	tags.genre = []
+	
 	for tag in response["data"]["attributes"]["tags"]:
-		if tag["attributes"]["group"] == "format":
-			tags.format.append(tag["attributes"]["name"]["en"])
-		elif tag["attributes"]["group"] == "theme":
-			tags.theme.append(tag["attributes"]["name"]["en"])
-		elif tag["attributes"]["group"] == "genre":
-			tags.genre.append(tag["attributes"]["name"]["en"])
+		if "en" in tag["attributes"]["name"]:
+			tag_name = tag["attributes"]["name"]["en"]
+		else:
+			tag_name = next(iter(tag["attributes"]["name"].values()))
+		tag_group = tag["attributes"]["group"]
+		
+		if tag_group == "format":
+			tags.format.append(tag_name)
+		elif tag_group == "theme":
+			tags.theme.append(tag_name)
+		elif tag_group == "genre":
+			tags.genre.append(tag_name)
 	
 	return tags
 		
