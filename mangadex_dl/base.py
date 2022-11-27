@@ -4,6 +4,7 @@ Basic functions for getting information about manga; to create an output directo
 """
 
 import os, re
+from functools import lru_cache
 from collections import namedtuple
 
 from .download import *
@@ -180,5 +181,6 @@ def _get_authors(response):
 	
 	return authors, artists
 
+@lru_cache(maxsize=16)
 def _get_person_info(person_id):
 	return get_json("https://api.mangadex.org/author/{}".format(person_id))["data"]["attributes"]["name"]
