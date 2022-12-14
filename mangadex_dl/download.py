@@ -16,7 +16,7 @@ def url_request(url):
 			return response
 		except Exception as err:
 			error = err
-			time.sleep(2)
+			time.sleep(1 if i != 4 else 15)
 	raise error
 
 def get_json(url):
@@ -30,7 +30,7 @@ def download_chapters(requested_chapters, out_directory, is_datasaver, gui={"set
 		chapter_number = chapter["attributes"]["chapter"] if chapter["attributes"]["chapter"] != None else "Oneshot"
 		chapter_name = chapter["attributes"]["title"] if chapter["attributes"]["title"] != None else ""
 		chapter_volume = chapter["attributes"]["volume"] if chapter["attributes"]["volume"] != None else "Unknown"
-
+		
 		if gui["set"]:
 			gui["progress_chapter"].set((chapter_count/chapter_count_max)*100)
 			gui["progress_chapter_text"].set("[ {} / {} ]".format(chapter_count, chapter_count_max))
@@ -52,27 +52,27 @@ def download_chapters(requested_chapters, out_directory, is_datasaver, gui={"set
 		directory_chapter = os.path.join(out_directory, "Volume {}".format(chapter_volume), "Chapter {}".format(chapter_number))
 		if os.path.exists(directory_chapter):
 			# name folders like "Chapter 1 (2)"
-			for i in range(1, 10):
+			for i in range(1, 100):
 				temp_path = "{} ({})".format(directory_chapter, i)
 				if not os.path.exists(temp_path):
 					directory_chapter = temp_path
 					break
 		os.makedirs(directory_chapter)
 		
-		future_list = []
 		with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+			future_list = []
+			if gui["set"]:
+				gui["download_futures"] = future_list
+			
 			for image_url in image_url_list:
 				future_list.append(executor.submit(_download_image, base_url + image_url, image_count, directory_chapter))
 				image_count += 1
+			
 			for future in concurrent.futures.as_completed(future_list):
 				image_count_downloaded += 1
-				
 				if gui["set"]:
 					gui["progress_page"].set((image_count_downloaded/image_count_max)*100)
 					gui["progress_page_text"].set("[ {} / {} ]".format(image_count_downloaded, image_count_max))
-					if gui["exit"]:
-						for f in future_list:
-							f.cancel()
 				else:
 					print("\r  Downloaded images [{:3}/{:3}]...".format(image_count_downloaded, image_count_max), end="")
 		
@@ -85,8 +85,7 @@ def download_chapters(requested_chapters, out_directory, is_datasaver, gui={"set
 
 def _download_image(full_url, image_count, directory_chapter):
 	image_file_path = os.path.join(directory_chapter, "{:03d}{}".format(image_count, os.path.splitext(full_url)[1]))
-	image_file = open(image_file_path, mode="wb")
-	with image_file:
+	with open(image_file_path, mode="wb") as image_file:
 		image_file.write(url_request(full_url))
 	return
 

@@ -36,18 +36,17 @@ class _MangadexDlGui:
 	
 	def __init__(self, root, manga_url, args):
 		# technical elements
+		self.root = root
 		self.block = False
 		self.tree_a = None
 		self.tree_b = None
 		self.indicator = None
 		self.status = StringVar(value="None")
-		self.lib_options = {"set": True, "exit": False,
+		self.lib_options = {"set": True, "exit": False, "download_futures": [],
 				    "progress_chapter": DoubleVar(value=0.0), "progress_page": DoubleVar(value=0.0),
 				    "progress_chapter_text": StringVar(value="[ - / - ]"), "progress_page_text": StringVar(value="[ - / - ]")}
-		
-		self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-		self.futures = []
 		self.padding = 5 # i don't see how to add a margin through the global styles, so we add this every time in each widget
+		self.futures = []
 		
 		# manga-relative vars
 		self.manga_info = None
@@ -66,12 +65,12 @@ class _MangadexDlGui:
 		self.convert_args_to_stringvar(args)
 		
 		# init interface
-		root.title("Mangadex-dl")
-		root.columnconfigure(0, weight=1)
-		root.rowconfigure(0, weight=1)
-		root.rowconfigure(1, weight=0)
+		self.root.title("Mangadex-dl")
+		self.root.columnconfigure(0, weight=1)
+		self.root.rowconfigure(0, weight=1)
+		self.root.rowconfigure(1, weight=0)
 		
-		mainframe = ttk.Notebook(root)
+		mainframe = ttk.Notebook(self.root)
 		mainframe.grid(column=0, row=0, sticky=(N, S, E, W), pady=self.padding, padx=self.padding)
 
 		self.tab_settings = self.init_tab_settings()
@@ -84,7 +83,7 @@ class _MangadexDlGui:
 		mainframe.add(self.tab_scanlate, text="Group Priority")
 		mainframe.add(self.tab_download, text="Download")
 		
-		statusbar = self.init_statusbar(root)
+		statusbar = self.init_statusbar(self.root)
 		statusbar.grid(column=0, row=1, sticky=(N, S, E, W), pady=self.padding, padx=self.padding)
 		
 	##########################
@@ -92,29 +91,25 @@ class _MangadexDlGui:
 	##########################
 	def async_run(self, f, *args):
 		if not self.block:
-			self.block = True
-			self.set_interface_state(False)
-			future = self.executor.submit(lambda: self.async_wrap(f, *args))
-			future.add_done_callback(self.unblock_process)
-			self.futures.append(future)
+			self.futures.append(concurrent.futures.ThreadPoolExecutor(max_workers=1)
+					    .submit(lambda: self.async_wrap(f, *args)))
 		else:
 			messagebox.showinfo(message="Wait until the current operation completes.")
 		return
 	
 	def async_wrap(self, f, *args):
 		try:
+			self.block = True
+			self.set_interface_state(False)
 			self.indicator.start()
 			f(*args)
 		except Exception as e:
 			messagebox.showinfo(message="Error: {}\n\n{}".format(e, traceback.format_exc()))
 			self.status.set("Something went wrong!")
 		finally:
+			self.block = False
+			self.set_interface_state(True)
 			self.indicator.stop()
-			return
-	
-	def unblock_process(self, x):
-		self.block = False
-		self.set_interface_state(True)
 		return
 	
 	def set_interface_state(self, state=True):
@@ -265,15 +260,18 @@ class _MangadexDlGui:
 	#       CALLBACKS        #
 	##########################
 	def cb_on_closing(self):
-		self.lib_options["exit"] = True
+		for future in self.lib_options["download_futures"]:
+			try:
+				future.cancel()
+			except:
+				pass
 		for future in self.futures:
 			try:
 				future.cancel()
-				if future.running():
-					future.exception(timeout=0.01)
-			except Exception:
+			except:
 				pass
-		exit(0)
+		self.root.destroy()
+		return
 	
 	def cb_search_result_select(self, e):
 		if len(e) != 0:
