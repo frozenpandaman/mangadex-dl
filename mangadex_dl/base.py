@@ -3,11 +3,19 @@ Mangadex-dl: base.py
 Basic functions for getting information about manga; to create an output directory.
 """
 
-import os, re
+import os, re, urllib.parse
 from functools import lru_cache
 from collections import namedtuple
 
 from .download import *
+
+def get_uuid(manga_url):
+	regex = re.compile("\w{8}-\w{4}-\w{4}-\w{4}-\w{12}")
+	manga_uuid_match = re.findall(regex, manga_url)
+	if manga_uuid_match:
+		return manga_uuid_match[0]
+	else:
+		return None
 
 def search_manga(title, language):
 	data = urllib.parse.urlencode({"title": title})
@@ -19,10 +27,10 @@ def get_manga_info(manga_url, language):
 	manga_info = namedtuple("manga_info", ["uuid", "title", "title_en", "authors", "artists", "year",
 					       "status", "last_volume", "last_chapter", "demographic",
 					       "content_rating", "tags", "description", "original_language"])
-	manga_info.uuid = _get_uuid(manga_url)
+	manga_info.uuid = get_uuid(manga_url)
 	
 	response = get_json("https://api.mangadex.org/manga/{}".format(manga_info.uuid))
-
+	
 	manga_info.year = response["data"]["attributes"]["year"]
 	manga_info.status = response["data"]["attributes"]["status"]
 	manga_info.last_volume = response["data"]["attributes"]["lastVolume"]
@@ -98,14 +106,6 @@ def check_output_directory(user_directory):
 		out_directory = os.path.abspath(user_directory)
 	
 	return out_directory
-
-def _get_uuid(manga_url):
-	regex = re.compile("\w{8}-\w{4}-\w{4}-\w{4}-\w{12}")
-	manga_uuid_match = re.findall(regex, manga_url)
-	if manga_uuid_match:
-		return manga_uuid_match[0]
-	else:
-		raise ValueError("Cannot retrieve manga UUID")
 
 def _get_title(response, language):
 	title_dict = response["data"]["attributes"]["title"]

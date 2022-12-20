@@ -75,11 +75,9 @@ def _dl_console(manga_url, args):
 	return
 
 def _search_manga_info(manga_url, language):
-	try:
+	if get_uuid(manga_url):
 		manga_info = get_manga_info(manga_url, language)
 		return manga_info
-	except ValueError:
-		pass
 	
 	manga_list_found = search_manga(manga_url, language)
 	if len(manga_list_found) == 0:
@@ -91,7 +89,7 @@ def _search_manga_info(manga_url, language):
 	user_input = int(input("Insert number (zero to cancel):\n> "))
 	if user_input == 0:
 		raise ValueError("The program was canceled by the user")
-	manga_info = manga_list_found[user_input-1]
+	return manga_list_found[user_input-1]
 
 def _print_found_manga_list(manga_list):
 	print("The following titles were found on request:")
@@ -99,6 +97,7 @@ def _print_found_manga_list(manga_list):
 	for manga in manga_list:
 		print("{:2}. {} ({}) by {}".format(index, manga.title, manga.year, ", ".join(manga.authors)))
 		index += 1
+	return
 
 def _print_available_chapters(chapters_list):
 	print("Available chapters: (total {})".format(len(chapters_list)), end="")
@@ -113,7 +112,7 @@ def _print_available_chapters(chapters_list):
 		
 		print("{:>6}".format(chapter_name), end="")
 	print()
-
+	return
 
 def _resolve_duplicates_manual_console(chapters_list, duplicates_list, scanlation_groups):
 	for group in scanlation_groups:

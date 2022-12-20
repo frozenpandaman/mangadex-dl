@@ -1,8 +1,5 @@
 import argparse
 
-from .console import *
-from .gui import *
-
 def initialize():
 	help_str = "Examples of valid input for a range of downloadable chapters: "\
 	"[ all | "\
@@ -40,12 +37,15 @@ def initialize():
 			    help="open GUI instead console version (default: False)")
 	parser.add_argument("manga_urls", metavar="<manga_urls>", nargs="*",
 			    help="specify manga url")
+	
 	args = parser.parse_args()
-
 	if args.gui:
+		from .gui import init_gui
 		init_gui(args)
 	else:
+		from .console import init_console
 		init_console(args)
+	return
 
 if __name__ == "__main__":
 	initialize()

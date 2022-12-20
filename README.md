@@ -4,7 +4,7 @@
 A Python package to download manga from [MangaDex.org](https://mangadex.org/).
 
 ## Requirements
-  * [Python 3.6+](https://www.python.org/downloads/) (or [install via Homebrew](https://docs.python-guide.org/starting/install3/osx/) on macOS)
+  * [Python 3.8+](https://www.python.org/downloads/) (or [install via Homebrew](https://docs.python-guide.org/starting/install3/osx/) on macOS)
 
 ## Installation & usage
 ```

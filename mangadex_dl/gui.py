@@ -41,7 +41,7 @@ class _MangadexDlGui:
 		self.tree_a = None
 		self.tree_b = None
 		self.indicator = None
-		self.status = StringVar(value="None")
+		self.status = StringVar(value="Enter a URL or search query in the searchbar")
 		self.lib_options = {"set": True, "exit": False, "download_futures": [],
 				    "progress_chapter": DoubleVar(value=0.0), "progress_page": DoubleVar(value=0.0),
 				    "progress_chapter_text": StringVar(value="[ - / - ]"), "progress_page_text": StringVar(value="[ - / - ]")}
@@ -294,18 +294,17 @@ class _MangadexDlGui:
 		
 		# start downloading
 		self.status.set("Receiving manga's info...")
-		try:
-			self.manga_info = get_manga_info(self.manga_url.get(), self.args.language.get())
-		except ValueError:
+		
+		if get_uuid(self.manga_url.get()) is None:
 			self.manga_list_found = search_manga(self.manga_url.get(), self.args.language.get())
 			if len(self.manga_list_found) == 0:
 				self.status.set("Nothing was found according to your request")
 			else:
 				self.status.set("Select title and search again")
-			
 			self.update_search_results_list()
 			return
 		
+		self.manga_info = get_manga_info(self.manga_url.get(), self.args.language.get())
 		self.update_manga_info()
 		
 		self.status.set("Receiving available chapters...")

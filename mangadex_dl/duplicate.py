@@ -4,6 +4,7 @@ Sometimes chapters are duplicated by several scanlate groups, these functions al
 """
 
 from .download import *
+from functools import lru_cache
 
 def resolve_duplicated_chapters(chapters_list, resolve, resolve_manual_function):
 	"""
@@ -115,5 +116,6 @@ def _get_chapter_scanlation_id(chapter):
 		if relation["type"] == "scanlation_group":
 			return(relation["id"])
 
+@lru_cache(maxsize=16)
 def _get_scanlation_group_info(group_id):
 	return get_json("https://api.mangadex.org/group/{}".format(group_id))["data"]
