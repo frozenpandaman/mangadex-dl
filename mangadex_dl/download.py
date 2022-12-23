@@ -20,7 +20,7 @@ def url_request(url):
 			
 			data = bytes()
 			url_parse = urllib.parse.urlparse(url)
-			conn = http.client.HTTPSConnection(url_parse.netloc)
+			conn = http.client.HTTPSConnection(url_parse.netloc, timeout=60)
 			conn.request("GET", urllib.parse.urlunsplit(["", "", url_parse.path, url_parse.query, ""]))
 			response = conn.getresponse()
 			
