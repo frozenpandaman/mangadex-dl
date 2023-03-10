@@ -22,7 +22,7 @@ def archive_manga(manga_directory, archive_mode, is_keep,  gui={"set": False}):
                 directory_list += map(lambda d: os.path.join(volume_dir_path, d), next(os.walk(volume_dir_path))[1])
     
     # skip directories that have already been archived before
-    directory_list = list(filter(lambda x: not os.path.exists(x + ".zip"), directory_list))
+    directory_list = list(filter(lambda x: not os.path.exists(f"{x}.zip"), directory_list))
     
     directory_count_archived = 1
     directory_count_max = len(directory_list)
@@ -36,18 +36,16 @@ def archive_manga(manga_directory, archive_mode, is_keep,  gui={"set": False}):
         
         if gui["set"]:
             gui["progress_chapter"].set((directory_count_archived/directory_count_max)*100)
-            gui["progress_chapter_text"].set("[ {} / {} ]".format(directory_count_archived, directory_count_max))
-            if gui["exit"]:
-                break
+            gui["progress_chapter_text"].set(f"[ {directory_count_archived} / {directory_count_max} ]")
         else:
-            print("\r  Archiving [{:3}/{:3}]...".format(directory_count_archived, directory_count_max), end="")
+            print(f"\r  Archiving [{directory_count_archived:3}/{directory_count_max:3}]...", end="")
         
         directory_count_archived += 1
     return
 
 def _archive_directory(directory, is_keep):
     archive_format = "zip" # you can change that to cbz
-    zip_name = "{}.{}".format(directory, archive_format)
+    zip_name = f"{directory}.{archive_format}"
     
     with zipfile.ZipFile(zip_name, mode="w", compression=zipfile.ZIP_STORED, allowZip64=True) as zip_file:
         for root, dirs, files in os.walk(directory):

@@ -33,7 +33,7 @@ def resolve_duplicated_chapters(chapters_list, resolve, resolve_manual_function)
     # manually set scanlate groups priority
     print("Receiving scanlate groups info...")
     scanlation_groups = get_scanlation_groups_from_duplicates(duplicates_list)
-    print("Duplicated chapters have {} scanlate groups".format(len(scanlation_groups)))
+    print(f"Duplicated chapters have {len(scanlation_groups)} scanlate groups")
     
     if len(scanlation_groups) == 0:
         return
@@ -116,6 +116,6 @@ def _get_chapter_scanlation_id(chapter):
         if relation["type"] == "scanlation_group":
             return(relation["id"])
 
-@lru_cache(maxsize=16)
+@lru_cache(maxsize=8)
 def _get_scanlation_group_info(group_id):
-    return get_json("https://api.mangadex.org/group/{}".format(group_id))["data"]
+    return get_json(f"https://api.mangadex.org/group/{group_id}")["data"]

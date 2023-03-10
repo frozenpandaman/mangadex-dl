@@ -7,9 +7,8 @@ import os, time, json, concurrent.futures, http.client, urllib.parse
 from collections import deque
 
 def url_request(url):
-    # let's try three times
     error = None
-    for i in range(3):
+    for i in range(5):
         try:
             # This function uses http.client instead of urllib.requets
             # since urllib often returns an IncompleteRead
@@ -20,12 +19,12 @@ def url_request(url):
             
             data = bytes()
             url_parse = urllib.parse.urlparse(url)
-            conn = http.client.HTTPSConnection(url_parse.netloc, timeout=60)
+            conn = http.client.HTTPSConnection(url_parse.netloc, timeout=120)
             conn.request("GET", urllib.parse.urlunsplit(["", "", url_parse.path, url_parse.query, ""]))
             response = conn.getresponse()
             
             if response.status != 200:
-                raise http.client.HTTPException("Error: {}, {}".format(response.status,response.reason))
+                raise http.client.HTTPException(f"Error: {response.status}, {response.reason}")
 
             while chunk := response.read(1024):
                 data += chunk
@@ -34,11 +33,12 @@ def url_request(url):
             if response.getheader("content-length") != None:
                 if len(data) != int(response.getheader("content-length")):
                     raise http.client.IncompleteRead(data)
+            
             conn.close()
             return data
         except Exception as err:
             error = err
-            time.sleep(1 if i != 2 else 10)
+            time.sleep(1 if i < 3 else 10)
     raise error
 
 def get_json(url):
@@ -56,16 +56,18 @@ def download_chapters(requested_chapters, out_directory, is_datasaver, gui={"set
         if gui["set"]:
             # This 'gui' object stores data to update progressbars and text in GUI
             gui["progress_chapter"].set((chapter_count/chapter_count_max)*100)
-            gui["progress_chapter_text"].set("[ {} / {} ]".format(chapter_count, chapter_count_max))
+            gui["progress_chapter_text"].set(f"[ {chapter_count} / {chapter_count_max} ]")
         else:
             # Otherwise, print the console output
             print("\nDownloading chapter [{:3}/{:3}] Ch.{} {}".format(chapter_count, chapter_count_max, chapter_number, chapter_name))
         
-        chapter_json = get_json("https://api.mangadex.org/at-home/server/{}".format(chapter["id"]))
+        chapter_json = get_json(f"https://api.mangadex.org/at-home/server/{chapter['id']}")
+        
         # "https://uploads.mangadex.org/data/3ed5ed7ba35891cc9902f94e8488a51a/"
         base_url = "{}/{}/{}/".format(chapter_json["baseUrl"],
                                       "data-saver" if is_datasaver else "data",
                                       chapter_json["chapter"]["hash"])
+        
         # ["k6-413f22d5e1a26c32f621ead08a26c89b199c9266b9e76780c13548df0d8fcdf9.png", ...]
         image_url_list = chapter_json["chapter"]["dataSaver"] if is_datasaver else chapter_json["chapter"]["data"]
         
@@ -74,15 +76,16 @@ def download_chapters(requested_chapters, out_directory, is_datasaver, gui={"set
         image_count_max = len(image_url_list)
         
         if image_count_max == 0:
-            print("  Chapter {} is not available from Mangadex.".format(chapter_number))
+            print(f"  Chapter {chapter_number} is not available from Mangadex.")
             continue
         
         directory_chapter = _create_chapter_directory(out_directory, chapter_volume, chapter_number)
         
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=5)
+        if gui["set"]:
+                gui["thread_pool"] = thread_pool
+        with thread_pool as executor:
             future_list = []
-            if gui["set"]:
-                gui["download_futures"] = future_list
             
             for image_url in image_url_list:
                 future_list.append(executor.submit(_download_image, base_url + image_url, image_count, directory_chapter))
@@ -92,9 +95,9 @@ def download_chapters(requested_chapters, out_directory, is_datasaver, gui={"set
                 image_count_downloaded += 1
                 if gui["set"]:
                     gui["progress_page"].set((image_count_downloaded/image_count_max)*100)
-                    gui["progress_page_text"].set("[ {} / {} ]".format(image_count_downloaded, image_count_max))
+                    gui["progress_page_text"].set(f"[ {image_count_downloaded} / {image_count_max} ]")
                 else:
-                    print("\r  Downloaded images [{:3}/{:3}]...".format(image_count_downloaded, image_count_max), end="")
+                    print(f"\r  Downloaded images [{image_count_downloaded:3}/{image_count_max:3}]...", end="")
         
         if gui["set"]:
             gui["progress_page"].set(0)
@@ -110,15 +113,15 @@ def _download_image(full_url, image_count, directory_chapter):
         with open(image_file_path, mode="wb") as image_file:
             image_file.write(data)
     except Exception as err:
-        print("File download failed\n({})\n[{}]\n".format(image_file_path, err))
+        print(f"File download failed\n({image_file_path})\n[{err}]\n")
     return
 
 def _create_chapter_directory(out_directory, chapter_volume, chapter_number):
-    directory_chapter = os.path.join(out_directory, "Volume {}".format(chapter_volume), "Chapter {}".format(chapter_number))
+    directory_chapter = os.path.join(out_directory, f"Volume {chapter_volume}", f"Chapter {chapter_number}")
     if os.path.exists(directory_chapter):
         # name folders like "Chapter 1 (2)"
         for i in range(1, 100):
-            temp_path = "{} ({})".format(directory_chapter, i)
+            temp_path = f"{directory_chapter} ({i})"
             if not os.path.exists(temp_path):
                 directory_chapter = temp_path
                 break

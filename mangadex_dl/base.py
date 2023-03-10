@@ -19,17 +19,17 @@ def get_uuid(manga_url):
 
 def search_manga(title, language):
     data = urllib.parse.urlencode({"title": title})
-    response = get_json("https://api.mangadex.org/manga?{}".format(data))
+    response = get_json(f"https://api.mangadex.org/manga?{data}")
     
     return [get_manga_info(manga["id"], language) for manga in response["data"]]
 
 def get_manga_info(manga_url, language):
     manga_info = namedtuple("manga_info", ["uuid", "title", "title_en", "authors", "artists", "year",
-                           "status", "last_volume", "last_chapter", "demographic",
-                           "content_rating", "tags", "description", "original_language"])
+                                           "status", "last_volume", "last_chapter", "demographic",
+                                           "content_rating", "tags", "description", "original_language"])
     manga_info.uuid = get_uuid(manga_url)
     
-    response = get_json("https://api.mangadex.org/manga/{}".format(manga_info.uuid))
+    response = get_json(f"https://api.mangadex.org/manga/{manga_info.uuid}")
     
     manga_info.year = response["data"]["attributes"]["year"]
     manga_info.status = response["data"]["attributes"]["status"]
@@ -55,14 +55,13 @@ def get_chapters_list(manga_uuid, language):
         raise ValueError("No chapters available to download!")
     
     while offset < chapters_info["total"]: # if more than 500 chapters!
-        response = get_json("https://api.mangadex.org/manga/{}/feed"\
+        response = get_json(f"https://api.mangadex.org/manga/{manga_uuid}/feed"\
                             "?order[volume]=asc&order[chapter]=asc&limit=500"\
-                            "&translatedLanguage[]={}&offset={}"\
+                            f"&translatedLanguage[]={language}&offset={offset}"\
                             "&contentRating[]=safe"\
                             "&contentRating[]=suggestive"\
                             "&contentRating[]=erotica"\
-                            "&contentRating[]=pornographic"
-                            .format(manga_uuid, language, offset))
+                            "&contentRating[]=pornographic")
         chapters_list += response["data"]
         offset += 500
     
@@ -73,18 +72,17 @@ def get_chapters_list(manga_uuid, language):
     if len(unavailable_list) != 0:
         for chapter in unavailable_list:
             chapters_list.remove(chapter)
-        print("Warning: {} chapters are not available from Mangadex.org.".format(len(unavailable_list)))
+        print(f"Warning: {len(unavailable_list)} chapters are not available from Mangadex.org.")
     
     return chapters_list
 
 def get_chapters_info(manga_uuid, language):
-    return get_json("https://api.mangadex.org/manga/{}/feed"\
-                    "?limit=0&translatedLanguage[]={}"\
+    return get_json(f"https://api.mangadex.org/manga/{manga_uuid}/feed"\
+                    f"?limit=0&translatedLanguage[]={language}"\
                     "&contentRating[]=safe"\
                     "&contentRating[]=suggestive"\
                     "&contentRating[]=erotica"\
-                    "&contentRating[]=pornographic"
-                    .format(manga_uuid, language))
+                    "&contentRating[]=pornographic")
 
 def create_manga_directory(user_directory, manga_title, manga_uuid):
     out_directory = check_output_directory(user_directory)
@@ -95,7 +93,7 @@ def create_manga_directory(user_directory, manga_title, manga_uuid):
             os.makedirs(manga_directory)
         except OSError:
             print("Warning: Cannot create manga directory. Changed name to UUID.")
-            manga_directory = os.path.join(out_directory, "Manga {}".format(manga_uuid))
+            manga_directory = os.path.join(out_directory, f"Manga {manga_uuid}")
             os.makedirs(manga_directory)
     return manga_directory
 
@@ -184,4 +182,4 @@ def _get_authors(response):
 
 @lru_cache(maxsize=16)
 def _get_person_info(person_id):
-    return get_json("https://api.mangadex.org/author/{}".format(person_id))["data"]["attributes"]["name"]
+    return get_json(f"https://api.mangadex.org/author/{person_id}")["data"]["attributes"]["name"]

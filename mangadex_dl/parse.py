@@ -39,7 +39,7 @@ def get_requested_chapters(chapters_list, dl_list):
 
 def _parse_entry_input(entry_input):
     range_object = {"start": {"volume": None, "chapter": None},
-            "end": {"volume": None, "chapter": None}}
+                    "end": {"volume": None, "chapter": None}}
     
     # "v1(1)-v2(3)" --> ["v1(1)", "v2(3)"]
     entry_list = entry_input.split("-")

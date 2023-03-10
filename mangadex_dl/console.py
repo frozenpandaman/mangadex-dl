@@ -15,9 +15,8 @@ def init_console(args):
     # input urls if they are not given by command line option
     if not args.manga_urls:
         while True:
-            print()
             try:
-                manga_input = input("Enter URL or text to search by title. (leave blank to complete)\n> ")
+                manga_input = input("\nEnter URL or text to search by title. (leave blank to complete)\n> ")
             except EOFError:
                 break
             if manga_input is None or manga_input == "":
@@ -48,9 +47,11 @@ def _dl_console(manga_url, args):
     
     # i/o for chapters to download
     if args.download == None:
-        dl_input = input("\nEnter chapter(s) to download:"\
-                         "\n(see README for examples of valid format)"\
+        dl_input = input("\nEnter chapters to download:"\
+                         "\n(see README for examples of valid format) (leave blank to cancel)"\
                          "\n> ")
+        if dl_input == "":
+            return
     else:
         dl_input = args.download
     
@@ -70,7 +71,7 @@ def _dl_console(manga_url, args):
         archive_manga(manga_directory, args.archive, args.keep)
         print("\nArchiving completed successfully")
     
-    print("\nManga \"{}\" was successfully downloaded".format(manga_info.title))
+    print(f"\nManga \"{manga_info.title}\" was successfully downloaded")
     return
 
 def _search_manga_info(manga_url, language):
@@ -85,21 +86,19 @@ def _search_manga_info(manga_url, language):
         return manga_list_found[0]
     
     _print_found_manga_list(manga_list_found)
-    user_input = int(input("Insert number (zero to cancel):\n> "))
-    if user_input == 0:
+    user_input = input("Insert number (leave blank to cancel):\n> ")
+    if user_input == "":
         raise ValueError("The program was canceled by the user")
-    return manga_list_found[user_input-1]
+    return manga_list_found[int(user_input)-1]
 
 def _print_found_manga_list(manga_list):
     print("The following titles were found on request:")
-    index = 1
-    for manga in manga_list:
-        print("{:2}. {} ({}) by {}".format(index, manga.title, manga.year, ", ".join(manga.authors)))
-        index += 1
+    for i, manga in enumerate(manga_list, start=1):
+        print("{:2}. {} ({}) by {}".format(i, manga.title, manga.year, ", ".join(manga.authors)))
     return
 
 def _print_available_chapters(chapters_list):
-    print("Available chapters: (total {})".format(len(chapters_list)), end="")
+    print(f"Available chapters: (total {len(chapters_list)})", end="")
     volume_number = None
     for chapter in chapters_list:
         chapter_volume = chapter["attributes"]["volume"] if chapter["attributes"]["volume"] != "" and chapter["attributes"]["volume"] != None else "Unknown"
@@ -107,15 +106,15 @@ def _print_available_chapters(chapters_list):
         
         if volume_number != chapter_volume:
             volume_number = chapter_volume
-            print("\nVolume {:2}".format(volume_number), end=": ")
+            print(f"\nVolume {volume_number:2}: ", end="")
         
-        print("{:>6}".format(chapter_name), end="")
+        print(f"{chapter_name:>6}", end="")
     print()
     return
 
 def _resolve_duplicates_manual_console(chapters_list, duplicates_list, scanlation_groups):
     for group in scanlation_groups:
-        group_priority = input("Specify priority for {}. [1-5]\n> ".format(group["attributes"]["name"]))
+        group_priority = input(f"Specify priority for {group['attributes']['name']}. [1-5]\n> ")
         group["priority"] = group_priority
     print("Groups are prioritized\n")
     

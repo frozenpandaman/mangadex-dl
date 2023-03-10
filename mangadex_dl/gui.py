@@ -30,7 +30,8 @@ def _dl_gui(manga_url, args):
         root.protocol("WM_DELETE_WINDOW", app.cb_on_closing)
         root.mainloop()
     except Exception as e:
-        messagebox.showinfo(message="Error: {}\n\nSkip download.\n\n{}".format(e, traceback.format_exc()))
+        print(traceback.format_exc())
+        messagebox.showinfo(message=f"Error: {e}\n\nSkip download.")
 
 class _MangadexDlGui:
     
@@ -40,13 +41,14 @@ class _MangadexDlGui:
         self.block = False
         self.tree_a = None
         self.tree_b = None
+        self.padding = 5 # i don't see how to add a margin through the global styles, so we add this every time in each widget
         self.indicator = None
         self.status = StringVar(value="Enter a URL or search query in the searchbar")
-        self.lib_options = {"set": True, "exit": False, "download_futures": [],
+        self.future = None
+        self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        self.lib_options = {"set": True, "exit": False, "thread_pool": None,
                             "progress_chapter": DoubleVar(value=0.0), "progress_page": DoubleVar(value=0.0),
                             "progress_chapter_text": StringVar(value="[ - / - ]"), "progress_page_text": StringVar(value="[ - / - ]")}
-        self.padding = 5 # i don't see how to add a margin through the global styles, so we add this every time in each widget
-        self.futures = []
         
         # manga-relative vars
         self.manga_info = None
@@ -72,7 +74,7 @@ class _MangadexDlGui:
         
         mainframe = ttk.Notebook(self.root)
         mainframe.grid(column=0, row=0, sticky=(N, S, E, W), pady=self.padding, padx=self.padding)
-
+        
         self.tab_settings = self.init_tab_settings()
         self.tab_search = self.init_tab_search()
         self.tab_scanlate = self.init_tab_scanlate()
@@ -89,10 +91,10 @@ class _MangadexDlGui:
     ##########################
     #   FUNCTIONS SECTION    #
     ##########################
+    
     def async_run(self, f, *args):
         if not self.block:
-            self.futures.append(concurrent.futures.ThreadPoolExecutor(max_workers=1)
-                                .submit(lambda: self.async_wrap(f, *args)))
+            self.future = self.thread_pool.submit(lambda: self.async_wrap(f, *args))
         else:
             messagebox.showinfo(message="Wait until the current operation completes.")
         return
@@ -104,9 +106,11 @@ class _MangadexDlGui:
             self.indicator.start()
             f(*args)
         except Exception as e:
-            messagebox.showinfo(message="Error: {}\n\n{}".format(e, traceback.format_exc()))
-            self.status.set("Something went wrong!")
+            print(traceback.format_exc())
+            self.status.set("Something went wrong! Please try again.")
+            messagebox.showinfo(message=f"Error: {e}")
         finally:
+            self.future = None
             self.block = False
             self.set_interface_state(True)
             self.indicator.stop()
@@ -186,14 +190,14 @@ class _MangadexDlGui:
         return get_chapters_list(self.manga_info.uuid, self.args.language.get())
     
     def update_search_results_list(self):
-        name_list = ["{} ({}) by {}".format(manga.title, manga.year, ", ".join(manga.authors)) for manga in self.manga_list_found]
+        name_list = [f"{manga.title} ({manga.year}) by {', '.join(manga.authors)}" for manga in self.manga_list_found]
         self.manga_list_found_var.set(name_list)
         return
     
     def update_tree_chapters(self):
         # Tk does not know about MVC pattern, and manually maintaining it is too troublesome.
         # Therefore, with each action on the tree, it is simply updated, closing all open entries,
-        # instrad smooth update in 'self.tree_item_move'. Maybe sometime...
+        # instead smooth update in 'self.tree_item_move'. Maybe sometime...
         self.chapters_list.sort(key=self.sort_chapters_list_key)
         self.chapters_list_selected.sort(key=self.sort_chapters_list_key)
         
@@ -215,9 +219,9 @@ class _MangadexDlGui:
             c_v_num = c_v if c_v != "" and c_v != None else "Unknown"
             c_n_num = c_n if c_n != None else "Oneshot"
             c_t_num = c_t if c_t != None else ""
-            chapter_volume = "Volume {}".format(c_v_num)
-            chapter_name = "Chapter {}-{}".format(c_v_num, c_n_num)
-            chapter_title = "{} {}".format(chapter_name, c_t_num)
+            chapter_volume = f"Volume {c_v_num}"
+            chapter_name = f"Chapter {c_v_num}-{c_n_num}"
+            chapter_title = f"{chapter_name} {c_t_num}"
             chapter["volume"] = chapter_volume
             chapter["chapter"] = chapter_name
             
@@ -260,17 +264,13 @@ class _MangadexDlGui:
     #       CALLBACKS        #
     ##########################
     def cb_on_closing(self):
-        for future in self.lib_options["download_futures"]:
-            try:
-                future.cancel()
-            except:
-                pass
-        for future in self.futures:
-            try:
-                future.cancel()
-            except:
-                pass
-        self.root.destroy()
+        try:
+            self.thread_pool.shutdown(wait=False, cancel_futures=True)
+            if self.lib_options["thread_pool"]:
+                self.lib_options["thread_pool"].shutdown(wait=False, cancel_futures=True)
+            self.root.destroy()
+        except Exception as e:
+            pass
         return
     
     def cb_search_result_select(self, e):
@@ -284,7 +284,7 @@ class _MangadexDlGui:
         if self.manga_url.get() == "":
             messagebox.showinfo(message="Paste the URL first.\nChange to the English keyboard layout if you cannot paste text.")
             return
-
+        
         # clearing old results
         self.destroy_resolve_gui()
         self.clear_tree(self.tree_a)
@@ -385,6 +385,10 @@ class _MangadexDlGui:
         download_chapters(self.chapters_list_selected, manga_directory, self.args.datasaver.get(), self.lib_options)
         
         if self.args.archive.get() != "None":
+            self.lib_options["progress_chapter"].set(0)
+            self.lib_options["progress_page"].set(0)
+            self.lib_options["progress_chapter_text"].set("[ - / - ]")
+            self.lib_options["progress_page_text"].set("[ - / - ]")
             self.status.set("Archive downloaded chapters...")
             archive_manga(manga_directory, self.args.archive.get(), self.args.keep.get(), self.lib_options)
         
@@ -458,7 +462,7 @@ class _MangadexDlGui:
         
         check_keep = ttk.Checkbutton(frame, text="", variable=self.args.keep, onvalue="1", offvalue="0")
         check_keep.grid(column=1, row=7, sticky=(W), pady=self.padding, padx=self.padding)
-
+        
         separator_d = ttk.Separator(frame, orient=HORIZONTAL)
         separator_d.grid(column=0, row=8, columnspan=5, sticky=(W, E))
         
@@ -468,14 +472,14 @@ class _MangadexDlGui:
         
         check_datasaver = ttk.Checkbutton(frame, text="", variable=self.args.datasaver, onvalue="1", offvalue="0")
         check_datasaver.grid(column=1, row=9, sticky=(W), pady=self.padding, padx=self.padding)
-
+        
         separator_e = ttk.Separator(frame, orient=HORIZONTAL)
         separator_e.grid(column=0, row=10, columnspan=5, sticky=(W, E))
         
         # resolve duplicate
         label_resolve = ttk.Label(frame, text="How to resolve\nduplicates:", justify=RIGHT)
         label_resolve.grid(column=0, row=11, sticky=(E), pady=self.padding, padx=self.padding)
-
+        
         radio_resolve_a = ttk.Radiobutton(frame, text="Display all", variable=self.args.resolve, value="all")
         radio_resolve_b = ttk.Radiobutton(frame, text="Display only one", variable=self.args.resolve, value="one")
         radio_resolve_c = ttk.Radiobutton(frame, text="Manually set scanlate priorities", variable=self.args.resolve, value="manual")
@@ -488,7 +492,7 @@ class _MangadexDlGui:
         separator_d.grid(column=0, row=13, columnspan=5, sticky=(W, E))
         
         # help
-        label_help = ttk.Label(frame, text="After changing settings load URL in Search tab again.")
+        label_help = ttk.Label(frame, text="Note: after changing the language reload URL in Search tab again.")
         label_help.grid(column=0, row=14, columnspan=5, sticky=(W, E), pady=self.padding, padx=self.padding)
         
         return frame
@@ -594,7 +598,7 @@ class _MangadexDlGui:
         frame = ttk.Frame()
         
         label = ttk.Label(frame, text="You can manually prioritize scanlate groups.\n"\
-                  "Specify this in the settings tab, reload the URL and set the priorities in this tab.")
+                          "Specify this in the settings tab, reload the URL and set the priorities in this tab.")
         label.grid(column=0, row=0, pady=self.padding, padx=self.padding)
         
         return frame
