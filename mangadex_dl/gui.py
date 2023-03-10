@@ -194,18 +194,20 @@ class _MangadexDlGui:
         self.manga_list_found_var.set(name_list)
         return
     
-    def update_tree_chapters(self):
-        # Tk does not know about MVC pattern, and manually maintaining it is too troublesome.
-        # Therefore, with each action on the tree, it is simply updated, closing all open entries,
-        # instead smooth update in 'self.tree_item_move'. Maybe sometime...
+    def load_tree_chapters(self):
+        # Each volume in the tree is open by default.
+        # Tkinter does not provide a way to automatically update
+        # the list along with the tree or a way to keep open volumes between trees.
+        # Doing it manually is fraught with a bunch of synchronization errors and others,
+        # and is generally not worth the time.
         self.chapters_list.sort(key=self.sort_chapters_list_key)
         self.chapters_list_selected.sort(key=self.sort_chapters_list_key)
         
-        self.update_tree(self.tree_a, self.chapters_list)
-        self.update_tree(self.tree_b, self.chapters_list_selected)
+        self.load_tree(self.tree_a, self.chapters_list)
+        self.load_tree(self.tree_b, self.chapters_list_selected)
         return
     
-    def update_tree(self, tree, array):
+    def load_tree(self, tree, array):
         """
         Note: This function modifies the given array: ['volume'] and ['chapter']
         """
@@ -228,12 +230,26 @@ class _MangadexDlGui:
             if volume_name != chapter_volume:
                 volume_name = chapter_volume
                 tree.insert("", "end", volume_name, text=volume_name, values=("volume", json.dumps(chapter)))
+                tree.item(volume_name, open=True)
             tree.insert(volume_name, "end", text=chapter_title, values=("chapter", json.dumps(chapter)))
         return
     
     def tree_item_move(self, tree_a, tree_b, list_a, list_b, item):
-        list_a.remove(item)
-        list_b.append(item)
+        item_type = item["values"][0]
+        item_chap = json.loads(item["values"][1])
+        if item_type == "volume":
+            target_volume = item_chap["volume"]
+            selected_list = []
+            for chapter in list_a:
+                if chapter["volume"] == target_volume:
+                    selected_list.append(chapter)
+            for chapter in selected_list:
+                list_a.remove(chapter)
+                list_b.append(chapter)
+        elif item_type == "chapter":
+            list_a.remove(item_chap)
+            list_b.append(item_chap)
+        self.load_tree_chapters()
         return
     
     def clear_tree(self, tree):
@@ -322,7 +338,7 @@ class _MangadexDlGui:
                     self.chapters_list.remove(chapter)
         
         self.status.set("Updating chapters tree...")
-        self.update_tree_chapters()
+        self.load_tree_chapters()
         
         self.status.set("Manga info received")
         return
@@ -340,7 +356,7 @@ class _MangadexDlGui:
             group["priority"] = self.scanlation_groups_priority[index].get()
             index += 1
         self.chapters_list = resolve_scanlate_priority_function(self.chapters_list, self.duplicated_chapters_list, self.scanlation_groups)
-        self.update_tree_chapters()
+        self.load_tree_chapters()
         self.status.set("Chapters filtered")
         return
     
@@ -348,30 +364,15 @@ class _MangadexDlGui:
         if self.block:
             messagebox.showinfo(message="Wait for the download to complete.")
             return
-        
         item = tree_a.item(tree_a.focus())
         if type(item["open"]) != bool and item["text"] != "":
-            item_type = item["values"][0]
-            item_chap = json.loads(item["values"][1])
-            if item_type == "volume":
-                target_volume = item_chap["volume"]
-                selected_list = []
-                for chapter in list_a:
-                    if chapter["volume"] == target_volume:
-                        selected_list.append(chapter)
-                for chapter in selected_list:
-                    self.tree_item_move(tree_a, tree_b, list_a, list_b, chapter)
-            elif item_type == "chapter":
-                self.tree_item_move(tree_a, tree_b, list_a, list_b, item_chap)
-            
-            self.update_tree_chapters()
-        
+            self.tree_item_move(tree_a, tree_b, list_a, list_b, item)
         return
     
     def cb_move_all_to_selected(self):
         self.chapters_list_selected += self.chapters_list
         self.chapters_list = []
-        self.update_tree_chapters()
+        self.load_tree_chapters()
         return
     
     def cb_download_chapters(self):
