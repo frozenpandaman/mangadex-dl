@@ -209,7 +209,9 @@ class _MangadexDlGui:
     
     def load_tree(self, tree, array):
         """
-        Note: This function modifies the given array: ['volume'] and ['chapter']
+        Note: This function modifies the given array.
+        Adds text value to each chapter dict:
+        ['volume'], ['chapter'] and ['scanlate_name']
         """
         self.clear_tree(tree)
         
@@ -222,11 +224,19 @@ class _MangadexDlGui:
             c_n_num = c_n if c_n != None else "Oneshot"
             c_t_num = c_t if c_t != None else ""
             chapter_volume = f"Volume {c_v_num}"
-            chapter_name = f"Chapter {c_v_num}-{c_n_num}"
+            chapter_name = f"Chapter {c_n_num}"
             chapter_title = f"{chapter_name} {c_t_num}"
+            if self.args.resolve.get() != "one":
+                if "scanlate_name" not in chapter:
+                    scanlate_id = get_chapter_scanlation_id(chapter)
+                    if scanlate_id != None:
+                        scanlate_json = get_scanlation_group_info(scanlate_id)
+                        chapter["scanlate_name"] = scanlate_json["attributes"]["name"]
+                    else:
+                        chapter["scanlate_name"] = "No Scanlate Group"
+                chapter_title += f" [{chapter['scanlate_name']}]"
             chapter["volume"] = chapter_volume
             chapter["chapter"] = chapter_name
-            
             if volume_name != chapter_volume:
                 volume_name = chapter_volume
                 tree.insert("", "end", volume_name, text=volume_name, values=("volume", json.dumps(chapter)))
@@ -493,7 +503,7 @@ class _MangadexDlGui:
         separator_d.grid(column=0, row=13, columnspan=5, sticky=(W, E))
         
         # help
-        label_help = ttk.Label(frame, text="Note: after changing the language reload URL in Search tab again.")
+        label_help = ttk.Label(frame, text="Note: after changing language or duplicate settings reload URL in Search tab again.")
         label_help.grid(column=0, row=14, columnspan=5, sticky=(W, E), pady=self.padding, padx=self.padding)
         
         return frame

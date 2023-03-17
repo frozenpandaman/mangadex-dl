@@ -53,7 +53,7 @@ $ python -m mangadex_dl -g
 
 Or in the console version:
 ```
-$ python -m mangadex_dl -a volume
+$ python -m mangadex_dl -a chapter
 
 Enter URL or text to search by title. (leave blank to complete)
 > yotsuba
@@ -67,12 +67,13 @@ The following titles were found on request:
  2. Mahouka Koukou no Rettousei - Yotsuba Keishou-hen (2020) by Satou Tsutomu
  3. Try! Try! Try! (2001) by Azuma Kiyohiko
  4. Kimi ni, Yotsuba (2018) by Akino Kabocha
-Insert number (zero to cancel):
+ 
+Insert number (leave blank to cancel):
 > 1
 
 [ 1/ 1] TITLE: Yotsuba&!
 
-Available chapters: (total 118)
+Available chapters: (total 119)
 Volume 1 :      1     2     3     4     5     6     7
 Volume 2 :      8     9    10    11    12    13    14
 Volume 3 :     15    16    17    18    19    20    21
@@ -88,14 +89,14 @@ Volume 12:     77    78    79  79.2    80    81  81.2  81.3    82
 Volume 13:     83    84    85    86    87    88    89    90
 Volume 14:     91    92    93    94    95    96    97
 Volume 15:     98    99   100 100.2   101 101.2   102 102.2   103   104 104.2
-Volume Unknown:    105   106   107   108
+Volume Unknown:    105   106   107   108   109
 
-Enter chapter(s) to download:
-(see README for examples of valid format)
-> v3-v5
+Enter chapters to download:
+(see README for examples of valid format) (leave blank to cancel)
+> v15(103)-v15(104.2)
 
-Downloading chapter [  1/ 21] Ch.15 Yotsuba & Souvenirs
-  Downloaded images [ 18/ 18]...
+Downloading chapter [  1/  3] Ch.103 Yotsuba & Books
+  Downloaded images [  1/ 20]...
   [Text omitted...]
 Chapters download completed successfully
 
@@ -103,7 +104,7 @@ Archive downloaded chapters...
   Archiving [  3/  3]...
 Archiving completed successfully
 
-Manga "Yotsuba to!" was successfully downloaded
+Manga "Yotsuba&!" was successfully downloaded
 ```
 
 Instead of command-line options and manually inserting manga links, you can use a file redirection with some options:

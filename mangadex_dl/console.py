@@ -114,7 +114,7 @@ def _print_available_chapters(chapters_list):
 
 def _resolve_duplicates_manual_console(chapters_list, duplicates_list, scanlation_groups):
     for group in scanlation_groups:
-        group_priority = input(f"Specify priority for {group['attributes']['name']}. [1-5]\n> ")
+        group_priority = input(f"Specify priority for {group['attributes']['name']}. [1-5], highest is 1.\n> ")
         group["priority"] = group_priority
     print("Groups are prioritized\n")
     
