@@ -70,9 +70,11 @@ def get_chapters_list(manga_uuid, language):
         if chapter["attributes"]["externalUrl"] != None:
             unavailable_list.append(chapter)
     if len(unavailable_list) != 0:
+        print(f"Warning: {len(unavailable_list)} chapters are not available from Mangadex.org:\n[", end="")
+        print(*[i["attributes"]["chapter"] for i in unavailable_list], sep=", ", end="")
+        print("]")
         for chapter in unavailable_list:
             chapters_list.remove(chapter)
-        print(f"Warning: {len(unavailable_list)} chapters are not available from Mangadex.org.")
     
     return chapters_list
 

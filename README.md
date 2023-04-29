@@ -95,9 +95,8 @@ Enter chapters to download:
 (see README for examples of valid format) (leave blank to cancel)
 > v15(103)-v15(104.2)
 
-Downloading chapter [  1/  3] Ch.103 Yotsuba & Books
-  Downloaded images [  1/ 20]...
-  [Text omitted...]
+Downloading chapter [  3/  3] Ch.104.2 Yotsuba & Backpacks (part 2)
+  Downloaded images [ 32/ 32]...
 Chapters download completed successfully
 
 Archive downloaded chapters...

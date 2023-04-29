@@ -267,13 +267,11 @@ class _MangadexDlGui:
         return
     
     def sort_chapters_list_key(self, chapter):
-        option_a = 9999
-        option_b = 0
-        try:
-            option_a = float(chapter["attributes"]["volume"])
-            option_b = float(chapter["attributes"]["chapter"])
-        finally:
-            return (option_a, option_b)
+        c_v = chapter["attributes"]["volume"]
+        c_c = chapter["attributes"]["chapter"]
+        option_a = float(c_v) if c_v else 0.0
+        option_b = float(c_c) if c_c else 0.0
+        return (option_a, option_b)
     
     def convert_args_to_stringvar(self, args):
         # tk doesnt support python's types like None, so convert to string
