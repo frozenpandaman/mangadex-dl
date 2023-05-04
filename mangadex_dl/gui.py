@@ -60,6 +60,8 @@ class _MangadexDlGui:
         self.manga_url = StringVar(value=manga_url)
         self.manga_list_found = []
         self.manga_list_found_var = StringVar(value=self.manga_list_found)
+        self.chapters_len_available = StringVar(value="Available chapters")
+        self.chapters_len_download = StringVar(value="Chapters to download")
         
         # process command-line arguments
         args.outdir = check_output_directory(args.outdir)
@@ -205,6 +207,9 @@ class _MangadexDlGui:
         
         self.load_tree(self.tree_a, self.chapters_list)
         self.load_tree(self.tree_b, self.chapters_list_selected)
+        
+        self.chapters_len_available.set(f"Available chapters: {len(self.chapters_list)}")
+        self.chapters_len_download.set(f"Chapters to download: {len(self.chapters_list_selected)}")
         return
     
     def load_tree(self, tree, array):
@@ -315,6 +320,8 @@ class _MangadexDlGui:
         self.clear_tree(self.tree_b)
         self.chapters_list = []
         self.chapters_list_selected = []
+        self.chapters_len_available.set("Available chapters")
+        self.chapters_len_download.set("Chapters to download")
         
         # start downloading
         self.status.set("Receiving manga's info...")
@@ -566,10 +573,10 @@ class _MangadexDlGui:
         frame.columnconfigure(3, weight=0)
         
         # labels
-        label_a = ttk.Label(frame, text="Available chapters")
+        label_a = ttk.Label(frame, textvariable=self.chapters_len_available)
         label_a.grid(column=0, row=0, pady=self.padding, padx=self.padding)
         
-        label_b = ttk.Label(frame, text="Chapters to download")
+        label_b = ttk.Label(frame, textvariable=self.chapters_len_download)
         label_b.grid(column=2, row=0, pady=self.padding, padx=self.padding)
         
         # trees
