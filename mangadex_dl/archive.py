@@ -3,56 +3,59 @@ Mangadex-dl: archive.py
 Functions for archiving the manga directory.
 """
 
-import os, shutil, zipfile
+import shutil
+import zipfile
+from pathlib import Path
 
-def archive_manga(manga_directory, archive_mode, is_keep,  gui={"set": False}):
-    directory_list = []
-    
-    if archive_mode == "manga":
-        # archive whole manga directory
-        directory_list.append(manga_directory)
-    elif archive_mode == "volume":
-        # archive volume directories
-        directory_list += map(lambda d: os.path.join(manga_directory, d), next(os.walk(manga_directory))[1])
-    else:
-        for volume_dir in os.listdir(manga_directory):
-            volume_dir_path = os.path.join(manga_directory, volume_dir)
-            if os.path.isdir(volume_dir_path):
-                # archive chapter directories
-                directory_list += map(lambda d: os.path.join(volume_dir_path, d), next(os.walk(volume_dir_path))[1])
-    
-    # skip directories that have already been archived before
-    directory_list = list(filter(lambda x: not os.path.exists(f"{x}.zip"), directory_list))
-    
-    directory_count_archived = 1
-    directory_count_max = len(directory_list)
-    
-    if directory_count_max == 0:
-        print("  Looks like there is nothing to archive here.", end="", flush=True)
+def archive_manga(manga_dir: Path, archive_mode: str, is_keep: bool,
+                  gui: dict = {}) -> None:
+
+    dir_list = _find_directories(manga_dir, archive_mode)
+
+    dir_archived = 0
+    dir_max = len(dir_list)
+
+    if dir_max == 0:
+        print("Looks like there is nothing to archive.", end="", flush=True)
         return
-    
-    for directory in directory_list:
-        _archive_directory(directory, is_keep)
-        
-        if gui["set"]:
-            gui["progress_chapter"].set((directory_count_archived/directory_count_max)*100)
-            gui["progress_chapter_text"].set(f"[ {directory_count_archived} / {directory_count_max} ]")
-        else:
-            print(f"\r  Archiving [{directory_count_archived:3}/{directory_count_max:3}]...", end="")
-        
-        directory_count_archived += 1
-    return
 
-def _archive_directory(directory, is_keep):
-    archive_format = "zip" # you can change that to cbz
-    zip_name = f"{directory}.{archive_format}"
-    
-    with zipfile.ZipFile(zip_name, mode="w", compression=zipfile.ZIP_STORED, allowZip64=True) as zip_file:
-        for root, dirs, files in os.walk(directory):
-            for file in files:
-                filename = os.path.join(root, file)
-                arcname = os.path.relpath(os.path.join(root, file), directory)
-                zip_file.write(filename, arcname)
+    for directory in dir_list:
+        _archive_directory(directory, is_keep)
+        dir_archived += 1
+
+        if gui.get("set", False):
+            gui["progress_chapter"].set(
+                (dir_archived/dir_max)*100)
+            gui["progress_chapter_text"].set(
+                f"[ {dir_archived} / {dir_max} ]")
+        else:
+            print(f"\r  Archiving [{dir_archived:3}/{dir_max:3}]...", end="")
+
+def _archive_directory(directory: Path, is_keep: bool = True) -> None:
+    zip_name = directory.with_suffix(".zip") # you can change that to cbz
+
+    with zipfile.ZipFile(zip_name, mode="w",
+                         compression=zipfile.ZIP_STORED,
+                         allowZip64=True) as zip_file:
+        for filename in directory.glob("**/*"):
+            zip_file.write(filename, filename.relative_to(directory))
+
     if not is_keep:
         shutil.rmtree(directory)
-    return
+
+def _find_directories(manga_dir: Path, archive_mode: str) -> list[Path]:
+    dir_list = []
+
+    if archive_mode == "manga":
+        # archive whole manga dir
+        dir_list.append(manga_dir)
+    elif archive_mode == "volume":
+        # archive volume directories
+        dir_list += manga_dir.glob("*/")
+    else:
+        # archive chapter directories
+        dir_list += manga_dir.glob("*/*/")
+
+    # skip directories that have already been archived before
+    dir_list = list(filter(lambda f: not f.with_suffix(".zip").is_file(), dir_list))
+    return dir_list

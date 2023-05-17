@@ -1,0 +1,23 @@
+### DEFAULT
+# language  = "en"   # Download the title in the specified language (https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes).
+# outdir    = "."    # Output directory for downloading chapters. Use "/" slash.
+# download  = false  # Download range (see Readme). [ "all" | <range> | false ]
+# archive   = false  # How to archive manga in zip file. [ "manga" | "volume" | "chapter" | false ]
+# keep      = false  # Keep original files after archiving. [ true | false ]
+# datasaver = false  # Download images in lower quality. [ true | false ]
+# resolve   = "one"  # How to deal with duplicate chapters [ "all" | "one" | "manual" ]
+# gui       = true   # Runs a program in GUI mode. [ true | false ]
+# proxy     = false  # HTTP/S proxy [ user:pass@host:port | false ]
+# socks     = false  # Socks5 proxy [ user:pass@host:port | false ]
+
+language  = "en"
+outdir    = "."
+download  = false
+archive   = false
+keep      = false
+datasaver = false
+resolve   = "one"
+gui       = true
+
+proxy = false
+socks = false
