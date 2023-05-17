@@ -11,7 +11,7 @@ A Python package to download manga from [MangaDex.org](https://mangadex.org/).
 ```
 $ git clone https://github.com/Uwuewsky/mangadex-dl
 $ cd mangadex-dl/
-$ pip install requirements.txt
+$ pip install -r requirements.txt
 ```
 ```
 $ start.py
