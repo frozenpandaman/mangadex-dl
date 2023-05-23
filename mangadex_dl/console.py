@@ -4,17 +4,15 @@ Initializes the console version.
 """
 
 import traceback
-from types import SimpleNamespace as SN
 
 from mangadex_dl import utils
 from mangadex_dl import parse
 from mangadex_dl import archive as ar
 from mangadex_dl import download as dl
 from mangadex_dl import duplicate as dup
-from mangadex_dl.types import (Chapters, Scanlators, MangaInfo)
 
 
-def init_console(args: SN) -> None:
+def init_console(args):
     # input urls if they are not given by command line option
     if not args.manga_urls:
         while True:
@@ -34,7 +32,7 @@ def init_console(args: SN) -> None:
         except Exception:
             print("{}\nSkip download.".format(traceback.format_exc()))
 
-def _dl_console(manga_url: str, args: SN) -> None:
+def _dl_console(manga_url, args):
     print("\nReceiving manga's info...")
     manga_info = _search_manga_info(manga_url, args.language)
 
@@ -85,7 +83,7 @@ def _dl_console(manga_url: str, args: SN) -> None:
 
     print(f"\nManga \"{manga_info.title}\" was successfully downloaded")
 
-def _search_manga_info(manga_url: str, language: str) -> dict:
+def _search_manga_info(manga_url, language):
 
     if utils.get_uuid(manga_url):
         manga_info = utils.get_manga_info(manga_url, language)
@@ -107,13 +105,13 @@ def _search_manga_info(manga_url: str, language: str) -> dict:
 
     return manga_list_found[int(user_input)-1]
 
-def _print_found_manga_list(manga_list: list[MangaInfo]) -> None:
+def _print_found_manga_list(manga_list):
     print("The following titles were found on request:")
     for i, manga in enumerate(manga_list, start=1):
         print("{:2}. {} ({}) by {}".format(
             i, manga.title, manga.year, ", ".join(manga.authors)))
 
-def _print_available_chapters(chapters_list: Chapters) -> None:
+def _print_available_chapters(chapters_list):
 
     print(f"Available chapters: (total {len(chapters_list)})", end="")
 
@@ -129,9 +127,9 @@ def _print_available_chapters(chapters_list: Chapters) -> None:
         print(f"{chapter_name:>6}", end="")
     print()
 
-def _resolve_duplicates_manual_console(chapters_list: Chapters,
-                                       duplicates_list: Chapters,
-                                       scanlation_groups: Scanlators) -> Chapters:
+def _resolve_duplicates_manual_console(chapters_list,
+                                       duplicates_list,
+                                       scanlation_groups):
     for group in scanlation_groups:
         group_priority = input("Specify priority for "\
                                f"{group['attributes']['name']}. "\

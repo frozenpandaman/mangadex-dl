@@ -12,7 +12,7 @@ from requests import Session
 
 SESSION = Session()
 
-def init() -> None:
+def init():
     """Initialize mangadex_dl."""
 
     logging.basicConfig(format="[%(levelname)s] (%(filename)s): %(message)s")
@@ -23,7 +23,7 @@ def init() -> None:
     args_cfg.update(args_cmd)
 
     args = SimpleNamespace(**args_cfg)
-    args.outdir = Path(args.outdir)
+    args.outdir = Path(args.outdir).absolute()
 
     if args.proxy:
         SESSION.proxies = {
@@ -43,7 +43,7 @@ def init() -> None:
         from mangadex_dl.console import init_console
         init_console(args)
 
-def _parse_config(path: Path) -> dict:
+def _parse_config(path):
     "Return config file args."
 
     data = {}
@@ -56,7 +56,7 @@ def _parse_config(path: Path) -> dict:
 
     return data
 
-def _parse_args() -> dict:
+def _parse_args():
     """Return command-line args."""
 
     p = argparse.ArgumentParser()

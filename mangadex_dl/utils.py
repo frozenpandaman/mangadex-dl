@@ -8,25 +8,22 @@ import logging
 from pathlib import Path
 from functools import lru_cache
 from collections import namedtuple
-from typing import Optional
 
 import mangadex_dl.download as dl
-from mangadex_dl.types import (
-    Chapters, Authors, MangaInfo, Tags)
 
-def get_uuid(manga_url: str) -> Optional[str]:
+def get_uuid(manga_url):
     regex = re.compile(r"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}")
     manga_uuid_match = re.findall(regex, manga_url)
     if manga_uuid_match:
         return manga_uuid_match[0]
     return None
 
-def search_manga(title: str, language: str) -> list:
+def search_manga(title, language):
     res = dl.get_json("https://api.mangadex.org/manga", {"title": title})
 
     return [get_manga_info(manga["id"], language) for manga in res["data"]]
 
-def get_manga_info(manga_url: str, language: str) -> MangaInfo:
+def get_manga_info(manga_url, language):
     manga_info = namedtuple("manga_info", ["uuid", "title", "title_en",
                                            "authors", "artists",
                                            "year", "status",
@@ -53,7 +50,7 @@ def get_manga_info(manga_url: str, language: str) -> MangaInfo:
 
     return manga_info
 
-def get_chapters_list(manga_uuid: str, language: str) -> Chapters:
+def get_chapters_list(manga_uuid, language):
     chapters_info = get_chapters_info(manga_uuid, language)
     chapters_list = []
     offset = 0
@@ -89,7 +86,7 @@ def get_chapters_list(manga_uuid: str, language: str) -> Chapters:
 
     return chapters_list
 
-def get_chapters_info(manga_uuid: str, language: str) -> dict:
+def get_chapters_info(manga_uuid, language):
     return dl.get_json(f"https://api.mangadex.org/manga/{manga_uuid}/feed"\
                        f"?limit=0&translatedLanguage[]={language}"\
                        "&contentRating[]=safe"\
@@ -97,7 +94,7 @@ def get_chapters_info(manga_uuid: str, language: str) -> dict:
                        "&contentRating[]=erotica"\
                        "&contentRating[]=pornographic")
 
-def create_manga_directory(user_dir: Path,
+def create_manga_directory(user_dir,
                            manga_title: str,
                            manga_uuid: str) -> Path:
 
@@ -115,7 +112,7 @@ def create_manga_directory(user_dir: Path,
 
     return manga_dir
 
-def check_output_directory(user_dir: Path) -> Path:
+def check_output_directory(user_dir):
     out_dir = Path(".")
 
     if user_dir.is_dir():
@@ -123,7 +120,7 @@ def check_output_directory(user_dir: Path) -> Path:
 
     return out_dir
 
-def _get_title(res: dict, language: str) -> tuple[str, str]:
+def _get_title(res, language):
     title_dict = res["data"]["attributes"]["title"]
     alt_title_dict = res["data"]["attributes"]["altTitles"]
 
@@ -144,7 +141,7 @@ def _get_title(res: dict, language: str) -> tuple[str, str]:
 
     return title, title_en
 
-def _get_description(res: dict, language: str) -> str:
+def _get_description(res, language):
     desc_dict = res["data"]["attributes"]["description"]
     desc = "Description missing"
 
@@ -155,7 +152,7 @@ def _get_description(res: dict, language: str) -> str:
 
     return desc
 
-def _get_tags(res: dict) -> Tags:
+def _get_tags(res):
     tags = namedtuple("manga_tags", ["format", "theme", "genre"])
     tags.format = []
     tags.theme = []
@@ -178,7 +175,7 @@ def _get_tags(res: dict) -> Tags:
 
     return tags
 
-def _get_authors(res: dict) -> tuple[Authors, Authors]:
+def _get_authors(res):
     """
     This function returns a maximum of 3 authors only.
     Getting a big list from anthologies is too long.
@@ -202,6 +199,6 @@ def _get_authors(res: dict) -> tuple[Authors, Authors]:
     return authors, artists
 
 @lru_cache(maxsize=16)
-def _get_person_info(person_id: str) -> str:
+def _get_person_info(person_id):
     res = dl.get_json(f"https://api.mangadex.org/author/{person_id}")
     return res["data"]["attributes"]["name"]

@@ -5,14 +5,12 @@ these functions allow you to filter out unnecessary ones.
 """
 
 from functools import lru_cache
-from typing import Callable
 
 import mangadex_dl.download as dl
-from mangadex_dl.types import (Chapters, Scanlators, Duplicates)
 
-def resolve_duplicated_chapters(chapters_list: Chapters,
-                                resolve: str,
-                                resolve_manual_function: Callable) -> Chapters:
+def resolve_duplicated_chapters(chapters_list,
+                                resolve,
+                                resolve_manual_function):
     """
     Returns a list of chapters based on the given argument 'resolve'.
     'resolve_manual_function' is required to manually specify
@@ -49,7 +47,7 @@ def resolve_duplicated_chapters(chapters_list: Chapters,
                                    duplicates_list,
                                    scanlation_groups)
 
-def get_duplicated_chapters(chapters_list: Chapters) -> Duplicates:
+def get_duplicated_chapters(chapters_list):
     """
     Return a nested list of duplicates like:
     [[chap1_1, chap1_2], [chap2_1, chap2_2, chap2_3]...]
@@ -71,7 +69,7 @@ def get_duplicated_chapters(chapters_list: Chapters) -> Duplicates:
 
     return duplicates_list
 
-def get_scanlation_groups_from_duplicates(duplicates_list: Duplicates) -> Scanlators:
+def get_scanlation_groups_from_duplicates(duplicates_list):
     scanlation_groups_id = set()
     scanlation_groups = []
 
@@ -86,9 +84,9 @@ def get_scanlation_groups_from_duplicates(duplicates_list: Duplicates) -> Scanla
 
     return scanlation_groups
 
-def resolve_scanlate_priority_function(chapters_list: Chapters,
-                                       duplicates_list: Duplicates,
-                                       scanlation_groups: Scanlators) -> Chapters:
+def resolve_scanlate_priority_function(chapters_list,
+                                       duplicates_list,
+                                       scanlation_groups):
     """
     Filter out duplicate chapters from low priority groups
     in favor of higher priority groups.
@@ -124,11 +122,11 @@ def resolve_scanlate_priority_function(chapters_list: Chapters,
 
     return chapters_list
 
-def get_chapter_scanlation_id(chapter: dict) -> str:
+def get_chapter_scanlation_id(chapter):
     for relation in chapter["relationships"]:
         if relation["type"] == "scanlation_group":
             return relation["id"]
 
 @lru_cache(maxsize=16)
-def get_scanlation_group_info(group_id: str) -> dict:
+def get_scanlation_group_info(group_id):
     return dl.get_json(f"https://api.mangadex.org/group/{group_id}")["data"]

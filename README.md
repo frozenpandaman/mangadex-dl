@@ -19,7 +19,9 @@ or
 $ python -m mangadex_dl [manga_urls]
 ```
 
-## Configuration
+## Features
+
+### Configuration
 The repository contains a `config.toml` file with default parameters. The file can be modified.
 
 ### How can I download a chapter from a specific scanlate group?

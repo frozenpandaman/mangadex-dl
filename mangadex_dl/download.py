@@ -5,18 +5,14 @@ Handling low-level HTTP requests and loading images.
 
 import time
 import logging
+import requests
 import concurrent.futures
 from pathlib import Path
 from collections import deque
-from typing import Self, Union
 
 from mangadex_dl.instance import SESSION
-from mangadex_dl.types import Chapters
 
-def url_request(url: str,
-                params: dict={},
-                json: bool=False) -> Union[dict, bytes]:
-
+def url_request(url, params={}, json=False):
     error = None
     for i in range(5):
         try:
@@ -24,10 +20,21 @@ def url_request(url: str,
 
             r = SESSION.get(url, timeout=(10, 120), params=params)
 
+            r.raise_for_status()
+
             if json:
                 response = r.json()
             else:
                 response = r.content
+
+            if not json:
+                content_length = r.headers.get("content-length")
+                received_bytes = len(response)
+
+                if content_length and received_bytes != int(content_length):
+                    raise requests.RequestException(
+                        "IncompleteRead: "\
+                        f"{received_bytes} from {content_length}")
 
             return response
         except Exception as err:
@@ -36,13 +43,13 @@ def url_request(url: str,
     logging.error(f"URL Request: {error}")
     raise error
 
-def get_json(url: str, params: dict={}) -> dict:
+def get_json(url, params={}):
     return url_request(url, params=params, json=True)
 
-def download_chapters(requested_chapters: Chapters,
-                      out_directory: Path,
-                      is_datasaver: bool,
-                      gui: dict={"set": False}) -> None:
+def download_chapters(requested_chapters,
+                      out_directory,
+                      is_datasaver,
+                      gui={"set": False}):
 
     chapter_count = 1
     chapter_count_max = len(requested_chapters)
@@ -110,9 +117,7 @@ def download_chapters(requested_chapters: Chapters,
 
         chapter_count += 1
 
-def _download_image(full_url: str,
-                    image_count: int,
-                    directory_chapter: Path) -> None:
+def _download_image(full_url, image_count, directory_chapter):
 
     image_file_path = directory_chapter / "{:03d}{}".format(image_count, Path(full_url).suffix)
     try:
@@ -122,9 +127,7 @@ def _download_image(full_url: str,
     except Exception as err:
         logging.error(f"File download failed ({image_file_path}): {err}")
 
-def _create_chapter_directory(out_directory: Path,
-                              chapter_volume: str,
-                              chapter_number: str) -> Path:
+def _create_chapter_directory(out_directory, chapter_volume, chapter_number):
     directory_chapter = out_directory / f"Volume {chapter_volume}" / f"Chapter {chapter_number}"
 
     if directory_chapter.is_dir():

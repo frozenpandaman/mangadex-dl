@@ -1,4 +1,4 @@
-__version__ = "1.6.0"
+__version__ = "1.6.1"
 __all__ = [
-    "instance", "utils", "archive", "download", "duplicate", "parse", "console", "gui", "types"
+    "instance", "utils", "archive", "download", "duplicate", "parse", "console", "gui"
 ]
