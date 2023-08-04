@@ -3,20 +3,22 @@
 # outdir    = "."    # Output directory for downloading chapters. Use "/" slash.
 # download  = false  # Download range (see Readme). [ "all" | <range> | false ]
 # archive   = false  # How to archive manga in zip file. [ "manga" | "volume" | "chapter" | false ]
+# ext       = "zip"  # Archive file extension. [ "zip" | "cbz" ]
 # keep      = false  # Keep original files after archiving. [ true | false ]
 # datasaver = false  # Download images in lower quality. [ true | false ]
 # resolve   = "one"  # How to deal with duplicate chapters [ "all" | "one" | "manual" ]
 # gui       = true   # Runs a program in GUI mode. [ true | false ]
-# proxy     = false  # HTTP/S proxy [ user:pass@host:port | false ]
-# socks     = false  # Socks5 proxy [ user:pass@host:port | false ]
+# proxy     = false  # HTTP/S proxy [ "user:pass@host:port" | false ]
+# socks     = false  # Socks5 proxy [ "user:pass@host:port" | false ]. Tor: "127.0.0.1:9150".
 
 language  = "en"
 outdir    = "."
 download  = false
 archive   = false
+ext       = "zip"
 keep      = false
 datasaver = false
-resolve   = "one"
+resolve   = "all"
 gui       = true
 
 proxy = false

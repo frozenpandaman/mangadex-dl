@@ -78,7 +78,7 @@ def _dl_console(manga_url, args):
     # archive
     if args.archive:
         print("\nArchive downloaded chapters...")
-        ar.archive_manga(manga_directory, args.archive, args.keep)
+        ar.archive_manga(manga_directory, args.archive, args.keep, args.ext)
         print("\nArchiving completed successfully")
 
     print(f"\nManga \"{manga_info.title}\" was successfully downloaded")
@@ -142,3 +142,4 @@ def _resolve_duplicates_manual_console(chapters_list,
                                                            scanlation_groups)
 
     return chapters_list
+

@@ -281,6 +281,7 @@ class _MangadexDlGui:
         # tk doesnt support python's types like None, so convert to string
         self.args.outdir = StringVar(value=args.outdir)
         self.args.archive = StringVar(value=str(args.archive))
+        self.args.ext = StringVar(value=str(args.ext))
         self.args.download = StringVar(value=str(args.download))
         self.args.language = StringVar(value=args.language)
         self.args.keep = BooleanVar(value=args.keep)
@@ -404,7 +405,8 @@ class _MangadexDlGui:
             self.lib_options["progress_chapter_text"].set("[ - / - ]")
             self.lib_options["progress_page_text"].set("[ - / - ]")
             self.status.set("Archive downloaded chapters...")
-            ar.archive_manga(manga_directory, self.args.archive.get(), self.args.keep.get(), self.lib_options)
+            ar.archive_manga(manga_directory, self.args.archive.get(),
+                             self.args.keep.get(), self.args.ext.get(), self.lib_options)
 
         self.lib_options["progress_chapter"].set(0)
         self.lib_options["progress_page"].set(0)
@@ -435,8 +437,8 @@ class _MangadexDlGui:
         combobox_lang["values"] = ("en", "ru", "fr", "uk", "ja", "zh", "ko", "id")
         combobox_lang.grid(column=1, row=0, sticky=(W), pady=self.padding, padx=self.padding)
 
-        separator_a = ttk.Separator(frame, orient=HORIZONTAL)
-        separator_a.grid(column=0, row=1, columnspan=5, sticky=(W, E))
+        separator1 = ttk.Separator(frame, orient=HORIZONTAL)
+        separator1.grid(column=0, row=1, columnspan=5, sticky=(W, E))
 
         # out directory
         label_dir = ttk.Label(frame, text="Output directory:")
@@ -449,8 +451,8 @@ class _MangadexDlGui:
         button_dir = ttk.Button(frame, text="Change", command=self.cb_change_outdir)
         button_dir.grid(column=2, row=2, sticky=(W), pady=self.padding, padx=self.padding)
 
-        separator_b = ttk.Separator(frame, orient=HORIZONTAL)
-        separator_b.grid(column=0, row=3, columnspan=5, sticky=(W, E))
+        separator2 = ttk.Separator(frame, orient=HORIZONTAL)
+        separator2.grid(column=0, row=3, columnspan=5, sticky=(W, E))
 
         # archive
         label_archive = ttk.Label(frame, text="Archive:")
@@ -466,47 +468,60 @@ class _MangadexDlGui:
         radio_archive_c.grid(column=2, row=4, sticky=(W), pady=self.padding, padx=self.padding)
         radio_archive_d.grid(column=2, row=5, sticky=(W), pady=self.padding, padx=self.padding)
 
-        separator_c = ttk.Separator(frame, orient=HORIZONTAL)
-        separator_c.grid(column=0, row=6, columnspan=5, sticky=(W, E))
+        separator3 = ttk.Separator(frame, orient=HORIZONTAL)
+        separator3.grid(column=0, row=6, columnspan=5, sticky=(W, E))
+
+        # extension
+        label_ext = ttk.Label(frame, text="Extension:")
+        label_ext.grid(column=0, row=7, sticky=(E), pady=self.padding, padx=self.padding)
+
+        radio_ext_a = ttk.Radiobutton(frame, text="*.zip", variable=self.args.ext, value="zip")
+        radio_ext_b = ttk.Radiobutton(frame, text="*.cbz", variable=self.args.ext, value="cbz")
+
+        radio_ext_a.grid(column=1, row=7, sticky=(W), pady=self.padding, padx=self.padding)
+        radio_ext_b.grid(column=2, row=7, sticky=(W), pady=self.padding, padx=self.padding)
+
+        separator4 = ttk.Separator(frame, orient=HORIZONTAL)
+        separator4.grid(column=0, row=8, columnspan=5, sticky=(W, E))
 
         # keep original
-        label_archive = ttk.Label(frame, text="Keep original\nafter archiving:", justify=RIGHT)
-        label_archive.grid(column=0, row=7, sticky=(E), pady=self.padding, padx=self.padding)
+        label_keep = ttk.Label(frame, text="Keep original\nafter archiving:", justify=RIGHT)
+        label_keep.grid(column=0, row=9, sticky=(E), pady=self.padding, padx=self.padding)
 
         check_keep = ttk.Checkbutton(frame, text="", variable=self.args.keep, onvalue="1", offvalue="0")
-        check_keep.grid(column=1, row=7, sticky=(W), pady=self.padding, padx=self.padding)
+        check_keep.grid(column=1, row=9, sticky=(W), pady=self.padding, padx=self.padding)
 
-        separator_d = ttk.Separator(frame, orient=HORIZONTAL)
-        separator_d.grid(column=0, row=8, columnspan=5, sticky=(W, E))
+        separator5 = ttk.Separator(frame, orient=HORIZONTAL)
+        separator5.grid(column=0, row=10, columnspan=5, sticky=(W, E))
 
         # data saver
         label_datasaver = ttk.Label(frame, text="Download in\nworse quality:", justify=RIGHT)
-        label_datasaver.grid(column=0, row=9, sticky=(E), pady=self.padding, padx=self.padding)
+        label_datasaver.grid(column=0, row=11, sticky=(E), pady=self.padding, padx=self.padding)
 
         check_datasaver = ttk.Checkbutton(frame, text="", variable=self.args.datasaver, onvalue="1", offvalue="0")
-        check_datasaver.grid(column=1, row=9, sticky=(W), pady=self.padding, padx=self.padding)
+        check_datasaver.grid(column=1, row=11, sticky=(W), pady=self.padding, padx=self.padding)
 
-        separator_e = ttk.Separator(frame, orient=HORIZONTAL)
-        separator_e.grid(column=0, row=10, columnspan=5, sticky=(W, E))
+        separator6 = ttk.Separator(frame, orient=HORIZONTAL)
+        separator6.grid(column=0, row=12, columnspan=5, sticky=(W, E))
 
         # resolve duplicate
         label_resolve = ttk.Label(frame, text="How to resolve\nduplicates:", justify=RIGHT)
-        label_resolve.grid(column=0, row=11, sticky=(E), pady=self.padding, padx=self.padding)
+        label_resolve.grid(column=0, row=13, sticky=(E), pady=self.padding, padx=self.padding)
 
         radio_resolve_a = ttk.Radiobutton(frame, text="Display all", variable=self.args.resolve, value="all")
         radio_resolve_b = ttk.Radiobutton(frame, text="Display only one", variable=self.args.resolve, value="one")
         radio_resolve_c = ttk.Radiobutton(frame, text="Manually set scanlate priorities", variable=self.args.resolve, value="manual")
 
-        radio_resolve_a.grid(column=1, row=11, sticky=(W), pady=self.padding, padx=self.padding)
-        radio_resolve_b.grid(column=1, row=12, sticky=(W), pady=self.padding, padx=self.padding)
-        radio_resolve_c.grid(column=2, row=11, sticky=(W), pady=self.padding, padx=self.padding)
+        radio_resolve_a.grid(column=1, row=13, sticky=(W), pady=self.padding, padx=self.padding)
+        radio_resolve_b.grid(column=1, row=14, sticky=(W), pady=self.padding, padx=self.padding)
+        radio_resolve_c.grid(column=2, row=13, sticky=(W), pady=self.padding, padx=self.padding)
 
-        separator_d = ttk.Separator(frame, orient=HORIZONTAL)
-        separator_d.grid(column=0, row=13, columnspan=5, sticky=(W, E))
+        separator7 = ttk.Separator(frame, orient=HORIZONTAL)
+        separator7.grid(column=0, row=15, columnspan=5, sticky=(W, E))
 
         # help
         label_help = ttk.Label(frame, text="Note: after changing language or duplicate settings reload URL in Search tab again.")
-        label_help.grid(column=0, row=14, columnspan=5, sticky=(W, E), pady=self.padding, padx=self.padding)
+        label_help.grid(column=0, row=16, columnspan=5, sticky=(W, E), pady=self.padding, padx=self.padding)
 
         return frame
 
@@ -664,3 +679,4 @@ class _MangadexDlGui:
         ###
 
         return frame
+
